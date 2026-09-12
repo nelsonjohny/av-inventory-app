@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AV Inventory - Master Equipment List</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 1000px; margin: 2rem auto; padding: 0 1rem; color: #1e293b; background: #f8fafc; }
+    .nav { margin-bottom: 1.5rem; display: flex; gap: 12px; font-size: 14px; font-weight: 600; }
+    .nav a { color: #2563eb; text-decoration: none; }
+    .nav a:hover { text-decoration: underline; }
+
+    .header-bar { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; margin-bottom: 1rem; gap: 10px; }
+    h2 { margin: 0; }
+
+    .controls { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 1rem; }
+    .controls input, .controls select { padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 14px; background: white; }
+    .controls input { flex: 1; min-width: 220px; }
+
+    .card { background: white; border: 1px solid #e2e8f0; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; text-align: left; font-size: 14px; }
+    th, td { padding: 12px 16px; border-bottom: 1px solid #f1f5f9; }
+    th { background: #f8fafc; color: #475569; font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+    tr:hover { background: #f8fafc; }
+
+    .badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-weight: 700; font-size: 11px; text-transform: uppercase; }
+    .badge-available { background: #dcfce7; color: #166534; }
+    .badge-on_hire { background: #fee2e2; color: #991b1b; }
+    .badge-maintenance { background: #fef3c7; color: #92400e; }
+
+    .cond-excellent { color: #15803d; font-weight: 600; }
+    .cond-good { color: #2563eb; font-weight: 600; }
+    .cond-fair { color: #d97706; font-weight: 600; }
+    .cond-damaged { color: #dc2626; font-weight: 700; }
+
+    .count-tag { font-size: 13px; color: #64748b; font-weight: normal; margin-left: 8px; }
+  </style>
+</head>
+<body>
+
+  <div class="nav">
+    <a href="index.html">← Terminal</a>
+    <span>|</span>
+    <a href="reports.html">📊 Alerts & Reports</a>
+    <span>|</span>
+    <a href="add-equipment.html">+ Add Equipment</a>
+  </div>
+
+  <div class="header-bar">
+    <div>
+      <h2>Master Inventory Catalog <span class="count-tag" id="itemCount">(Loading...)</span></h2>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="controls">
+    <input type="text" id="searchInput" placeholder="Search by model name or barcode..." oninput="filterTable()" />
+    <select id="statusFilter" onchange="filterTable()">
+      <option value="">All Statuses</option>
+      <option value="available">Available</option>
+      <option value="on_hire">On Hire</option>
+      <option value="maintenance">Maintenance</option>
+    </select>
+    <select id="conditionFilter" onchange="filterTable()">
+      <option value="">All Conditions</option>
+      <option value="excellent">Excellent</option>
+      <option value="good">Good</option>
+      <option value="fair">Fair</option>
+      <option value="damaged">Damaged</option>
+    </select>
+  </div>
+
+  <!-- Table View -->
+  <div class="card">
+    <table>
+      <thead>
+        <tr>
+          <th>Barcode</th>
+          <th>Model Name</th>
+          <th>Category</th>
+          <th>Status</th>
+          <th>Condition</th>
+          <th>Current Event / Notes</th>
+        </tr>
+      </thead>
+      <tbody id="inventoryBody">
+        <tr>
+          <td colspan="6" style="text-align:center; padding: 2rem; color:#64748b;">Loading inventory...</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <script>
+    let rawInventory = [];
+
+    window.onload = fetchInventory;
+
+    async function fetchInventory() {
+      try {
+        const res = await fetch('/api/equipment');
+        if (!res.ok) throw new Error('Failed to load inventory');
+        rawInventory = await res.json();
+        renderTable(rawInventory);
+      } catch (err) {
+        document.getElementById('inventoryBody').innerHTML = `
+          <tr><td colspan="6" style="color:red; text-align:center; padding: 2rem;">Error: ${err.message}</td></tr>
+        `;
+      }
+    }
+
+    function renderTable(items) {
+      document.getElementById('itemCount').textContent = `(${items.length} items)`;
+      const tbody = document.getElementById('inventoryBody');
+
+      if (items.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 2rem; color:#64748b;">No matching equipment found.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = items.map(item => {
+        const status = (item.status || 'available').toLowerCase();
+        const condition = (item.condition || 'good').toLowerCase();
+        const eventOrNotes = item.event_name 
+          ? `📅 <strong>${item.event_name}</strong>` 
+          : (item.remarks || '<span style="color:#94a3b8;">—</span>');
+
+        return `
+          <tr>
+            <td><code><strong>${item.barcode}</strong></code></td>
+            <td>${item.model_name}</td>
+            <td style="color:#64748b;">${item.category || 'General'}</td>
+            <td><span class="badge badge-${status}">${status}</span></td>
+            <td><span class="cond-${condition}">${condition.toUpperCase()}</span></td>
+            <td>${eventOrNotes}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function filterTable() {
+      const query = document.getElementById('searchInput').value.trim().toLowerCase();
+      const status = document.getElementById('statusFilter').value.toLowerCase();
+      const condition = document.getElementById('conditionFilter').value.toLowerCase();
+
+      const filtered = rawInventory.filter(item => {
+        const matchesQuery = !query || 
+          item.model_name.toLowerCase().includes(query) || 
+          item.barcode.toLowerCase().includes(query);
+        
+        const matchesStatus = !status || (item.status && item.status.toLowerCase() === status);
+        const matchesCondition = !condition || (item.condition && item.condition.toLowerCase() === condition);
+
+        return matchesQuery && matchesStatus && matchesCondition;
+      });
+
+      renderTable(filtered);
+    }
+  </script>
+</body>
+</html>

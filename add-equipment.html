@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AV Inventory - Add Equipment & Print Labels</title>
+  <!-- Load JsBarcode from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 700px; margin: 2rem auto; padding: 0 1rem; color: #1e293b; background: #f8fafc; }
+    .nav { margin-bottom: 1.5rem; display: flex; gap: 12px; font-size: 14px; font-weight: 600; }
+    .nav a { color: #2563eb; text-decoration: none; }
+    .nav a:hover { text-decoration: underline; }
+    
+    .card { background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+    label { font-weight: 600; font-size: 13px; margin-top: 10px; display: block; color: #475569; text-transform: uppercase; }
+    input, select, button { width: 100%; margin: 6px 0 14px 0; padding: 10px; box-sizing: border-box; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 15px; }
+    .row { display: flex; gap: 10px; }
+    .row > div { flex: 1; }
+
+    button { background: #2563eb; color: white; border: none; font-weight: 600; cursor: pointer; }
+    button:hover { background: #1d4ed8; }
+    .btn-secondary { background: #64748b; }
+    .btn-secondary:hover { background: #475569; }
+    .btn-print { background: #0f172a; }
+    .btn-print:hover { background: #1e293b; }
+
+    /* Printable Label Styles */
+    #stickerContainer { display: none; text-align: center; }
+    .label-preview {
+      display: inline-block;
+      border: 2px dashed #cbd5e1;
+      padding: 12px 18px;
+      background: #ffffff;
+      border-radius: 8px;
+      margin: 10px 0;
+      text-align: center;
+      width: 260px;
+    }
+    .label-header { font-size: 12px; font-weight: 800; letter-spacing: 0.5px; color: #0f172a; text-transform: uppercase; margin-bottom: 2px; }
+    .label-sub { font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    /* Clean Print Rule: Only prints the barcode sticker */
+    @media print {
+      body * { visibility: hidden; }
+      #stickerContainer, #stickerContainer * { visibility: visible; }
+      #stickerContainer {
+        display: block !important;
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        margin: 0;
+        padding: 0;
+      }
+      .label-preview {
+        border: none !important;
+        box-shadow: none !important;
+        page-break-inside: avoid;
+      }
+      .no-print { display: none !important; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="nav no-print">
+    <a href="index.html">← Warehouse Terminal</a>
+    <span>|</span>
+    <a href="inventory.html">📋 Inventory List</a>
+    <span>|</span>
+    <a href="reports.html">📊 Reports & Alerts</a>
+  </div>
+
+
+  <h2 class="no-print" style="margin-bottom: 4px;">Register New Equipment</h2>
+  <p class="no-print" style="color: #64748b; margin-top: 0;">Enroll gear into the database and print weather-resistant asset barcode labels.</p>
+
+  <!-- 1. Equipment Entry Form -->
+  <div class="card no-print">
+    <label>Equipment Model Name:</label>
+    <input type="text" id="modelInput" placeholder="e.g., Sennheiser EW-D Wireless Receiver" />
+
+    <div class="row">
+      <div>
+        <label>Category:</label>
+        <select id="categorySelect">
+          <option value="Audio">Audio</option>
+          <option value="Video">Video</option>
+          <option value="Lighting">Lighting</option>
+          <option value="Rigging & Truss">Rigging & Truss</option>
+          <option value="Cables & Distro">Cables & Distro</option>
+        </select>
+      </div>
+      <div>
+        <label>Barcode Prefix:</label>
+        <select id="prefixSelect" onchange="autoGenerateBarcode()">
+          <option value="AV-AUD">AV-AUD (Audio)</option>
+          <option value="AV-VID">AV-VID (Video)</option>
+          <option value="AV-LGT">AV-LGT (Lighting)</option>
+          <option value="AV-RIG">AV-RIG (Rigging)</option>
+        </select>
+      </div>
+    </div>
+
+    <label>Asset Barcode:</label>
+    <div class="row">
+      <input type="text" id="barcodeInput" placeholder="e.g., AV-AUD-105" oninput="renderBarcodePreview()" />
+      <button type="button" class="btn-secondary" style="width: auto; white-space: nowrap; padding: 10px 14px;" onclick="autoGenerateBarcode()">⚡ Auto-Gen</button>
+    </div>
+
+    <button type="button" onclick="submitEquipment()">Save to Inventory & Generate Label</button>
+  </div>
+
+  <!-- 2. Barcode Label Preview & Print Terminal -->
+  <div class="card" id="stickerContainer">
+    <h3 class="no-print" style="margin-top:0; color:#0f172a;">Generated Asset Tag</h3>
+    
+    <div class="label-preview" id="labelCard">
+      <div class="label-header">AV PRODUCTION FLEET</div>
+      <div class="label-sub" id="lblTitle">Model Name Here</div>
+      <!-- SVG Element targeted by JsBarcode -->
+      <svg id="barcodeCanvas"></svg>
+    </div>
+
+    <div class="no-print" style="margin-top: 15px;">
+      <button type="button" class="btn-print" onclick="window.print()">🖨️ Print Barcode Label</button>
+      <button type="button" class="btn-secondary" onclick="resetForm()">+ Add Another Item</button>
+    </div>
+  </div>
+
+  <script>
+    window.onload = autoGenerateBarcode;
+
+    function autoGenerateBarcode() {
+      const prefix = document.getElementById('prefixSelect').value;
+      const randomNum = Math.floor(100 + Math.random() * 900); // 3-digit random serial
+      document.getElementById('barcodeInput').value = `${prefix}-${randomNum}`;
+      renderBarcodePreview();
+    }
+
+    function renderBarcodePreview() {
+      const code = document.getElementById('barcodeInput').value.trim().toUpperCase();
+      const model = document.getElementById('modelInput').value.trim() || 'New Equipment';
+
+      if (!code) return;
+
+      document.getElementById('lblTitle').textContent = model;
+
+      try {
+        JsBarcode("#barcodeCanvas", code, {
+          format: "CODE128",
+          lineColor: "#000",
+          width: 2,
+          height: 50,
+          displayValue: true,
+          fontSize: 14,
+          font: "monospace"
+        });
+      } catch (e) {
+        console.error('Invalid barcode characters:', e);
+      }
+    }
+
+    // Update label text live as user types model name
+    document.getElementById('modelInput').addEventListener('input', renderBarcodePreview);
+
+    async function submitEquipment() {
+      const model = document.getElementById('modelInput').value.trim();
+      const category = document.getElementById('categorySelect').value;
+      const barcode = document.getElementById('barcodeInput').value.trim().toUpperCase();
+
+      if (!model) return alert('Please enter the equipment model name.');
+      if (!barcode) return alert('Please provide or generate a barcode.');
+
+      try {
+        const res = await fetch('/api/equipment', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ barcode, model_name: model, category })
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed to save item');
+
+        alert(`✅ ${data.message}`);
+
+        // Ensure barcode is rendered and reveal sticker section
+        renderBarcodePreview();
+        document.getElementById('stickerContainer').style.display = 'block';
+
+        // Scroll sticker into view
+        document.getElementById('stickerContainer').scrollIntoView({ behavior: 'smooth' });
+      } catch (err) {
+        alert(err.message);
+      }
+    }
+
+    function resetForm() {
+      document.getElementById('modelInput').value = '';
+      autoGenerateBarcode();
+      document.getElementById('stickerContainer').style.display = 'none';
+    }
+  </script>
+</body>
+</html>

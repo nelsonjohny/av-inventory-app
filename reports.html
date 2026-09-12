@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AV Inventory - Alerts & Reports</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 900px; margin: 2rem auto; padding: 0 1rem; color: #1e293b; background: #f8fafc; }
+    h2, h3 { margin-bottom: 0.5rem; }
+    .nav { margin-bottom: 1.5rem; display: flex; gap: 10px; }
+    .nav a { color: #2563eb; text-decoration: none; font-weight: 600; font-size: 14px; }
+    .nav a:hover { text-decoration: underline; }
+    
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; margin-bottom: 1.5rem; }
+    .stat-card { background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1rem; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+    .stat-number { font-size: 26px; font-weight: 700; color: #0f172a; margin-top: 4px; }
+    .stat-label { font-size: 12px; color: #64748b; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px; }
+
+    .card { background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+    .card-alert { border-left: 5px solid #ef4444; }
+
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
+    th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid #f1f5f9; }
+    th { background: #f8fafc; color: #475569; font-weight: 600; font-size: 12px; text-transform: uppercase; }
+    tr:hover { background: #f8fafc; }
+
+    .badge { display: inline-block; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; }
+    .badge-overdue { background: #fee2e2; color: #991b1b; }
+    .badge-dispatch { background: #dbeafe; color: #1e40af; }
+    .badge-return { background: #dcfce7; color: #166534; }
+    .badge-damaged { background: #fef3c7; color: #92400e; }
+
+    .empty-state { padding: 1.5rem; text-align: center; color: #64748b; font-style: italic; }
+  </style>
+</head>
+<body>
+
+<div class="nav">
+    <a href="index.html">← Back to Scanner Terminal</a>
+    <span>|</span>
+    <a href="inventory.html">📋 Inventory List</a>
+    <span>|</span>
+    <a href="add-equipment.html">+ Add Equipment</a>
+    <span>|</span>
+    <a href="javascript:loadAllReports()">↻ Refresh Data</a>
+  </div>
+
+
+
+  <h2>Rental Operations & Activity Reports</h2>
+  <p style="color:#64748b; margin-top:0;">Real-time asset tracking, overdue equipment alerts, and 7-day movement summaries.</p>
+
+  <!-- KPI Cards -->
+  <div class="grid" id="kpiGrid">
+    <div class="stat-card"><div class="stat-label">Total Fleet</div><div class="stat-number" id="kpiTotal">-</div></div>
+    <div class="stat-card"><div class="stat-label">Available</div><div class="stat-number" id="kpiAvail" style="color:#16a34a;">-</div></div>
+    <div class="stat-card"><div class="stat-label">On Hire</div><div class="stat-number" id="kpiHire" style="color:#2563eb;">-</div></div>
+    <div class="stat-card"><div class="stat-label">Maintenance</div><div class="stat-number" id="kpiMaint" style="color:#d97706;">-</div></div>
+    <div class="stat-card"><div class="stat-label">7-Day Moves</div><div class="stat-number" id="kpiMoves">-</div></div>
+    <div class="stat-card"><div class="stat-label">Damaged Returns</div><div class="stat-number" id="kpiDamaged" style="color:#dc2626;">-</div></div>
+  </div>
+
+  <!-- Critical Alerts Table -->
+  <div class="card card-alert">
+    <h3 style="color: #dc2626; margin-top:0;">⚠️ Overdue Return Alerts</h3>
+    <div id="overdueContainer">Loading alerts...</div>
+  </div>
+
+  <!-- Weekly Activity Log -->
+  <div class="card">
+    <h3 style="margin-top:0;">7-Day Fleet Movement Log</h3>
+    <div id="activityContainer">Loading recent activity...</div>
+  </div>
+
+  <script>
+    window.onload = loadAllReports;
+
+    async function loadAllReports() {
+      await Promise.all([loadOverdueAlerts(), loadWeeklySummary()]);
+    }
+
+    async function loadOverdueAlerts() {
+      const container = document.getElementById('overdueContainer');
+      try {
+        const res = await fetch('/api/reports/overdue');
+        const data = await res.json();
+
+        if (data.length === 0) {
+          container.innerHTML = '<div class="empty-state">✅ All gear is accounted for. No overdue items.</div>';
+          return;
+        }
+
+        let html = `
+          <table>
+            <thead>
+              <tr>
+                <th>Barcode</th>
+                <th>Model</th>
+                <th>Assigned Event</th>
+                <th>Dispatched By</th>
+                <th>Due Date</th>
+                <th>Delay</th>
+              </tr>
+            </thead>
+            <tbody>
+        `;
+
+        data.forEach(item => {
+          const dueDate = new Date(item.expected_return_date).toLocaleDateString();
+          html += `
+            <tr>
+              <td><strong>${item.barcode}</strong></td>
+              <td>${item.model_name}</td>
+              <td>${item.event_name} (${item.client_name || 'N/A'})</td>
+              <td>${item.dispatched_by || 'Unknown'}</td>
+              <td>${dueDate}</td>
+              <td><span class="badge badge-overdue">${item.hours_overdue} hrs late</span></td>
+            </tr>
+          `;
+        });
+
+        html += '</tbody></table>';
+        container.innerHTML = html;
+      } catch (err) {
+        container.innerHTML = `<div style="color:red;">Failed to fetch alerts: ${err.message}</div>`;
+      }
+    }
+
+    async function loadWeeklySummary() {
+      try {
+        const res = await fetch('/api/reports/weekly-summary');
+        const data = await res.json();
+        const { kpis, recentActivity } = data;
+
+        // Fill KPIs
+        document.getElementById('kpiTotal').textContent = kpis.total_inventory;
+        document.getElementById('kpiAvail').textContent = kpis.available_count;
+        document.getElementById('kpiHire').textContent = kpis.on_hire_count;
+        document.getElementById('kpiMaint').textContent = kpis.maintenance_count;
+        document.getElementById('kpiMoves').textContent = kpis.weekly_movements;
+        document.getElementById('kpiDamaged').textContent = kpis.weekly_damages;
+
+        // Fill Activity Table
+        const container = document.getElementById('activityContainer');
+        if (recentActivity.length === 0) {
+          container.innerHTML = '<div class="empty-state">No equipment check-outs or check-ins recorded in the past 7 days.</div>';
+          return;
+        }
+
+        let html = `
+          <table>
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th>Action</th>
+                <th>Item</th>
+                <th>Staff</th>
+                <th>Event</th>
+                <th>Condition / Notes</th>
+              </tr>
+            </thead>
+            <tbody>
+        `;
+
+        recentActivity.forEach(row => {
+          const timeStr = new Date(row.action_timestamp).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+          const actionBadge = row.action_type === 'DISPATCH' 
+            ? '<span class="badge badge-dispatch">CHECK-OUT</span>' 
+            : '<span class="badge badge-return">CHECK-IN</span>';
+
+          const conditionBadge = row.condition && row.condition === 'damaged'
+            ? `<span class="badge badge-damaged">Damaged</span> `
+            : '';
+
+          html += `
+            <tr>
+              <td style="color:#64748b; font-size:12px;">${timeStr}</td>
+              <td>${actionBadge}</td>
+              <td><strong>${row.barcode}</strong> - ${row.model_name}</td>
+              <td>${row.employee_name}</td>
+              <td>${row.event_name || '—'}</td>
+              <td>${conditionBadge}${row.remarks || '—'}</td>
+            </tr>
+          `;
+        });
+
+        html += '</tbody></table>';
+        container.innerHTML = html;
+      } catch (err) {
+        console.error('Failed to load summary stats', err);
+      }
+    }
+  </script>
+</body>
+</html>

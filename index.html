@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AV Inventory Dispatch & Return</title>
+  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 650px; margin: 2rem auto; padding: 0 1rem; color: #222; }
+    .card { border: 1px solid #e2e8f0; border-radius: 8px; padding: 1.25rem; margin-bottom: 1.25rem; box-shadow: 0 1px 3px rgba(0,0,0,0.08); background: #fff; }
+    label { font-weight: 600; font-size: 14px; margin-top: 10px; display: block; }
+    input, select, textarea, button { width: 100%; margin: 6px 0 12px 0; padding: 10px; box-sizing: border-box; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 15px; }
+    button { background: #2563eb; color: white; border: none; font-weight: 600; cursor: pointer; }
+    button:hover { background: #1d4ed8; }
+    .btn-green { background: #16a34a; }
+    .btn-green:hover { background: #15803d; }
+    .badge { display: inline-block; padding: 3px 8px; border-radius: 4px; font-weight: 700; font-size: 12px; }
+    .badge-available { background: #dcfce7; color: #166534; }
+    .badge-on_hire { background: #fee2e2; color: #991b1b; }
+    .badge-maintenance { background: #fef3c7; color: #92400e; }
+    #reader { width: 100%; margin: 10px 0; display: none; }
+  </style>
+</head>
+<body>
+
+<p style="text-align: right; margin-top: 0; font-size: 14px; font-weight: 600;">
+  <a href="inventory.html" style="color: #2563eb; text-decoration: none; margin-right: 12px;">📋 View Master Inventory</a>
+  <a href="add-equipment.html" style="color: #2563eb; text-decoration: none; margin-right: 12px;">+ Add Gear</a>
+  <a href="reports.html" style="color: #2563eb; text-decoration: none;">📊 Alerts & Reports →</a>
+</p>
+
+
+  <h2>Warehouse Terminal</h2>
+
+  <!-- 1. Active Event Selector (Always Visible) -->
+  <div class="card" style="border-left: 4px solid #2563eb;">
+    <label for="eventSelect">Select Active Event / Job:</label>
+    <select id="eventSelect">
+      <option value="">Loading events from database...</option>
+    </select>
+    <button type="button" onclick="loadEvents()" style="background:#64748b; font-size:13px; padding:6px;">↻ Refresh Events List</button>
+  </div>
+
+  <!-- 2. Barcode Scanner / Input -->
+  <div class="card">
+    <h3>Scan or Enter Equipment Barcode</h3>
+    <div id="reader"></div>
+    <button type="button" onclick="toggleCamera()" style="background:#475569;">📷 Open Camera Scanner</button>
+    
+    <input type="text" id="barcodeInput" placeholder="Enter barcode (e.g., AV-CAM-001)" />
+    <button type="button" onclick="searchItem()">Search Equipment</button>
+
+    <!-- Found Item Details -->
+    <div id="itemDisplay" style="display:none; margin-top: 15px; background: #f8fafc; padding: 12px; border-radius: 6px; border: 1px solid #e2e8f0;">
+      <p><strong>Item:</strong> <span id="lblModel"></span></p>
+      <p><strong>Category:</strong> <span id="lblCategory"></span></p>
+      <p><strong>Current Status:</strong> <span id="lblStatus" class="badge"></span></p>
+      <p id="eventLine" style="display:none;"><strong>Currently Assigned To:</strong> <span id="lblEvent"></span></p>
+    </div>
+  </div>
+
+  <!-- 3. Dispatch Section -->
+  <div class="card" id="dispatchSection" style="display:none; border-top: 3px solid #2563eb;">
+    <h3 style="color: #2563eb; margin-top:0;">Dispatch Out (Check-Out)</h3>
+    <label>Warehouse Staff Name (Dispatching):</label>
+    <input type="text" id="dispEmployee" placeholder="e.g., Rahul S." />
+    <button type="button" onclick="submitDispatch()">Confirm & Dispatch Out</button>
+  </div>
+
+  <!-- 4. Return Section -->
+  <div class="card" id="returnSection" style="display:none; border-top: 3px solid #16a34a;">
+    <h3 style="color: #16a34a; margin-top:0;">Return In (Check-In)</h3>
+    <label>Warehouse Staff Name (Receiving):</label>
+    <input type="text" id="retEmployee" placeholder="e.g., Amit V." />
+
+    <label>Return Condition:</label>
+    <select id="retCondition">
+      <option value="excellent">Excellent - Flawless</option>
+      <option value="good">Good - Normal minor wear</option>
+      <option value="fair">Fair - Scratched / Heavy wear</option>
+      <option value="damaged">Damaged - Needs repair</option>
+    </select>
+
+    <label>Damage / Return Remarks:</label>
+    <textarea id="retRemarks" rows="2" placeholder="Note scratches, missing cables, or faults..."></textarea>
+    <button type="button" class="btn-green" onclick="submitReturn()">Complete Return Check-In</button>
+  </div>
+
+  <script>
+    let activeItem = null;
+    let html5QrcodeScanner = null;
+
+    window.onload = () => {
+      loadEvents();
+    };
+
+    async function loadEvents() {
+      const select = document.getElementById('eventSelect');
+      try {
+        const res = await fetch('/api/events');
+        if (!res.ok) throw new Error('API server returned error');
+        const events = await res.json();
+
+        if (events.length === 0) {
+          select.innerHTML = '<option value="">No events found in database</option>';
+          return;
+        }
+
+        select.innerHTML = events.map(e => `
+          <option value="${e.id}">${e.event_name || e.name || 'Unnamed Event'} (${e.client_name || 'No Client'})</option>
+        `).join('');
+      } catch (err) {
+        select.innerHTML = '<option value="">Cannot connect to server. Is node server.js running?</option>';
+      }
+    }
+
+    function toggleCamera() {
+      const readerEl = document.getElementById('reader');
+      if (readerEl.style.display === 'none' || readerEl.style.display === '') {
+        readerEl.style.display = 'block';
+        if (!html5QrcodeScanner) {
+          html5QrcodeScanner = new Html5QrcodeScanner("reader", { fps: 10, qrbox: { width: 250, height: 150 } }, false);
+          html5QrcodeScanner.render((decodedText) => {
+            document.getElementById('barcodeInput').value = decodedText;
+            html5QrcodeScanner.clear();
+            readerEl.style.display = 'none';
+            searchItem();
+          });
+        }
+      } else {
+        readerEl.style.display = 'none';
+      }
+    }
+
+    async function searchItem() {
+      const barcode = document.getElementById('barcodeInput').value.trim();
+      if (!barcode) return alert('Please enter a barcode');
+
+      try {
+        const res = await fetch('/api/scan/${barcode}');
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.error || 'Equipment not found');
+        }
+
+        activeItem = await res.json();
+
+        // Render equipment information
+        document.getElementById('lblModel').textContent = activeItem.model_name || 'N/A';
+        document.getElementById('lblCategory').textContent = activeItem.category || 'N/A';
+
+        const status = (activeItem.status || activeItem.current_status || 'available').toLowerCase();
+        const statusEl = document.getElementById('lblStatus');
+        statusEl.textContent = status.toUpperCase();
+        statusEl.className = 'badge badge-' + status;
+
+        if (activeItem.event_name) {
+          document.getElementById('eventLine').style.display = 'block';
+          document.getElementById('lblEvent').textContent = activeItem.event_name;
+        } else {
+          document.getElementById('eventLine').style.display = 'none';
+        }
+
+        document.getElementById('itemDisplay').style.display = 'block';
+
+        // Toggle cards depending on whether equipment is out or in warehouse
+        if (status === 'available') {
+          document.getElementById('dispatchSection').style.display = 'block';
+          document.getElementById('returnSection').style.display = 'none';
+        } else if (status === 'on_hire') {
+          document.getElementById('dispatchSection').style.display = 'none';
+          document.getElementById('returnSection').style.display = 'block';
+        } else {
+          document.getElementById('dispatchSection').style.display = 'none';
+          document.getElementById('returnSection').style.display = 'none';
+          alert('Item status is: ' + status.toUpperCase() + ' (Cannot dispatch or return directly).');
+        }
+      } catch (err) {
+        alert(err.message);
+      }
+    }
+
+    async function submitDispatch() {
+      const emp = document.getElementById('dispEmployee').value.trim();
+      const eventId = document.getElementById('eventSelect').value;
+
+      if (!emp) return alert('Please enter the employee name.');
+      if (!eventId) return alert('Please select an event from the top dropdown.');
+
+      try {
+        const res = await fetch('/api/dispatch', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            barcode: activeItem.barcode,
+            event_id: eventId,
+            employee_name: emp
+          })
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Dispatch failed');
+        alert(data.message);
+        location.reload();
+      } catch (err) {
+        alert(err.message);
+      }
+    }
+
+    async function submitReturn() {
+      const emp = document.getElementById('retEmployee').value.trim();
+      const condition = document.getElementById('retCondition').value;
+      const remarks = document.getElementById('retRemarks').value;
+
+      if (!emp) return alert('Please enter the receiving employee name.');
+
+      try {
+        const res = await fetch('/api/return', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            barcode: activeItem.barcode,
+            employee_name: emp,
+            condition,
+            remarks
+          })
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Return failed');
+        alert(data.message);
+        location.reload();
+      } catch (err) {
+        alert(err.message);
+      }
+    }
+  </script>
+</body>
+</html>
