@@ -1,134 +1,104 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
-
-<!-- JsBarcode Library -->
-<script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
-
-<style>
-  /* Single-label print layout */
-  @media print {
-    body * {
-      visibility: hidden;
-    }
-    #print-container, #print-container * {
-      visibility: visible;
-    }
-    #print-container {
-      position: absolute;
-      left: 0;
-      top: 0;
-      width: 100%;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      padding-top: 20px;
-    }
-    .print-label-card {
-      border: 1px dashed #333;
-      padding: 12px 20px;
-      text-align: center;
-      width: 250px;
-      page-break-inside: avoid;
-    }
-  }
-
-  .btn-print {
-    background-color: #4b5563;
-    color: #ffffff;
-    border: none;
-    padding: 4px 8px;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 12px;
-  }
-  .btn-print:hover {
-    background-color: #374151;
-  }
-</style>
-
-
-<style>
-  @media print {
-    body * {
-      visibility: hidden;
-    }
-    #print-container, #print-container * {
-      visibility: visible;
-    }
-    #print-container {
-      position: absolute;
-      left: 0;
-      top: 0;
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 10px;
-      width: 100%;
-    }
-    .label-card {
-      border: 1px dashed #ccc;
-      padding: 8px;
-      text-align: center;
-      page-break-inside: avoid;
-    }
-  }
-</style>
-
-<div id="print-container"></div>
-
-function printBarcodeLabels(equipmentList) {
-  const container = document.getElementById('print-container');
-  container.innerHTML = '';
-
-  equipmentList.forEach(item => {
-    const card = document.createElement('div');
-    card.className = 'label-card';
-    card.innerHTML = `
-      <div style="font-weight: bold; font-size: 12px;">${item.model_name}</div>
-      <svg id="barcode-${item.barcode}"></svg>
-      <div style="font-size: 10px; color: #555;">${item.category}</div>
-    `;
-    container.appendChild(card);
-
-    JsBarcode(`#barcode-${item.barcode}`, item.barcode, {
-      format: "CODE128",
-      width: 1.5,
-      height: 40,
-      displayValue: true,
-      fontSize: 12
-    });
-  });
-
-  window.print();
-}
-
-
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AV Inventory - Master Equipment List</title>
-  <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 1000px; margin: 2rem auto; padding: 0 1rem; color: #1e293b; background: #f8fafc; }
-    .nav { margin-bottom: 1.5rem; display: flex; gap: 12px; font-size: 14px; font-weight: 600; }
-    .nav a { color: #2563eb; text-decoration: none; }
-    .nav a:hover { text-decoration: underline; }
+  
+  <!-- JsBarcode Library -->
+  <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
 
-    .header-bar { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; margin-bottom: 1rem; gap: 10px; }
+  <style>
+    body { 
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+      max-width: 1050px; 
+      margin: 2rem auto; 
+      padding: 0 1rem; 
+      color: #1e293b; 
+      background: #f8fafc; 
+    }
+    .nav { 
+      margin-bottom: 1.5rem; 
+      display: flex; 
+      gap: 12px; 
+      font-size: 14px; 
+      font-weight: 600; 
+    }
+    .nav a { 
+      color: #2563eb; 
+      text-decoration: none; 
+    }
+    .nav a:hover { 
+      text-decoration: underline; 
+    }
+
+    .header-bar { 
+      display: flex; 
+      justify-content: space-between; 
+      align-items: center; 
+      flex-wrap: wrap; 
+      margin-bottom: 1rem; 
+      gap: 10px; 
+    }
     h2 { margin: 0; }
 
-    .controls { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 1rem; }
-    .controls input, .controls select { padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 14px; background: white; }
-    .controls input { flex: 1; min-width: 220px; }
+    .controls { 
+      display: flex; 
+      gap: 10px; 
+      flex-wrap: wrap; 
+      margin-bottom: 1rem; 
+    }
+    .controls input, .controls select { 
+      padding: 8px 12px; 
+      border-radius: 6px; 
+      border: 1px solid #cbd5e1; 
+      font-size: 14px; 
+      background: white; 
+    }
+    .controls input { 
+      flex: 1; 
+      min-width: 220px; 
+    }
 
-    .card { background: white; border: 1px solid #e2e8f0; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); overflow-x: auto; }
-    table { width: 100%; border-collapse: collapse; text-align: left; font-size: 14px; }
-    th, td { padding: 12px 16px; border-bottom: 1px solid #f1f5f9; }
-    th { background: #f8fafc; color: #475569; font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
-    tr:hover { background: #f8fafc; }
+    .card { 
+      background: white; 
+      border: 1px solid #e2e8f0; 
+      border-radius: 8px; 
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05); 
+      overflow-x: auto; 
+    }
+    table { 
+      width: 100%; 
+      border-collapse: collapse; 
+      text-align: left; 
+      font-size: 14px; 
+    }
+    th, td { 
+      padding: 12px 16px; 
+      border-bottom: 1px solid #f1f5f9; 
+    }
+    th { 
+      background: #f8fafc; 
+      color: #475569; 
+      font-weight: 600; 
+      font-size: 12px; 
+      text-transform: uppercase; 
+      letter-spacing: 0.5px; 
+    }
+    tr:hover { 
+      background: #f8fafc; 
+    }
 
-    .badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-weight: 700; font-size: 11px; text-transform: uppercase; }
+    .badge { 
+      display: inline-block; 
+      padding: 4px 8px; 
+      border-radius: 4px; 
+      font-weight: 700; 
+      font-size: 11px; 
+      text-transform: uppercase; 
+    }
     .badge-available { background: #dcfce7; color: #166534; }
-    .badge-on_hire { background: #fee2e2; color: #991b1b; }
+    .badge-on_hire, .badge-in_use { background: #fee2e2; color: #991b1b; }
     .badge-maintenance { background: #fef3c7; color: #92400e; }
 
     .cond-excellent { color: #15803d; font-weight: 600; }
@@ -136,7 +106,59 @@ function printBarcodeLabels(equipmentList) {
     .cond-fair { color: #d97706; font-weight: 600; }
     .cond-damaged { color: #dc2626; font-weight: 700; }
 
-    .count-tag { font-size: 13px; color: #64748b; font-weight: normal; margin-left: 8px; }
+    .count-tag { 
+      font-size: 13px; 
+      color: #64748b; 
+      font-weight: normal; 
+      margin-left: 8px; 
+    }
+
+    .btn-print {
+      background-color: #4b5563;
+      color: #ffffff;
+      border: none;
+      padding: 5px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .btn-print:hover {
+      background-color: #374151;
+    }
+
+    /* Print Formatting */
+    #print-container {
+      display: none;
+    }
+
+    @media print {
+      body * {
+        visibility: hidden;
+      }
+      #print-container, #print-container * {
+        visibility: visible;
+      }
+      #print-container {
+        display: flex !important;
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        justify-content: center;
+        align-items: center;
+        padding-top: 40px;
+      }
+      .print-label-card {
+        border: 1px dashed #333;
+        padding: 12px 20px;
+        text-align: center;
+        width: 260px;
+        page-break-inside: avoid;
+      }
+    }
   </style>
 </head>
 <body>
@@ -161,7 +183,7 @@ function printBarcodeLabels(equipmentList) {
     <select id="statusFilter" onchange="filterTable()">
       <option value="">All Statuses</option>
       <option value="available">Available</option>
-      <option value="on_hire">On Hire</option>
+      <option value="in_use">In Use / On Hire</option>
       <option value="maintenance">Maintenance</option>
     </select>
     <select id="conditionFilter" onchange="filterTable()">
@@ -176,22 +198,6 @@ function printBarcodeLabels(equipmentList) {
   <!-- Table View -->
   <div class="card">
     <table>
-
-<thead>
-  <tr>
-    <th>Barcode</th>
-    <th>Model Name</th>
-    <th>Category</th>
-    <th>Status</th>
-    <th>Condition</th>
-    <th>Actions</th>
-  </tr>
-</thead>
-<tbody id="inventory-table-body">
-  <!-- Dynamic rows go here -->
-</tbody>
-
-
       <thead>
         <tr>
           <th>Barcode</th>
@@ -200,15 +206,19 @@ function printBarcodeLabels(equipmentList) {
           <th>Status</th>
           <th>Condition</th>
           <th>Current Event / Notes</th>
+          <th>Actions</th>
         </tr>
       </thead>
       <tbody id="inventoryBody">
         <tr>
-          <td colspan="6" style="text-align:center; padding: 2rem; color:#64748b;">Loading inventory...</td>
+          <td colspan="7" style="text-align:center; padding: 2rem; color:#64748b;">Loading inventory...</td>
         </tr>
       </tbody>
     </table>
   </div>
+
+  <!-- Dedicated Print Area -->
+  <div id="print-container"></div>
 
   <script>
     let rawInventory = [];
@@ -223,7 +233,7 @@ function printBarcodeLabels(equipmentList) {
         renderTable(rawInventory);
       } catch (err) {
         document.getElementById('inventoryBody').innerHTML = `
-          <tr><td colspan="6" style="color:red; text-align:center; padding: 2rem;">Error: ${err.message}</td></tr>
+          <tr><td colspan="7" style="color:red; text-align:center; padding: 2rem;">Error: ${err.message}</td></tr>
         `;
       }
     }
@@ -233,7 +243,7 @@ function printBarcodeLabels(equipmentList) {
       const tbody = document.getElementById('inventoryBody');
 
       if (items.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 2rem; color:#64748b;">No matching equipment found.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding: 2rem; color:#64748b;">No matching equipment found.</td></tr>';
         return;
       }
 
@@ -243,15 +253,22 @@ function printBarcodeLabels(equipmentList) {
         const eventOrNotes = item.event_name 
           ? `📅 <strong>${item.event_name}</strong>` 
           : (item.remarks || '<span style="color:#94a3b8;">—</span>');
+        const safeModel = (item.model_name || '').replace(/'/g, "\\'");
+        const safeCategory = (item.category || 'General').replace(/'/g, "\\'");
 
         return `
           <tr>
             <td><code><strong>${item.barcode}</strong></code></td>
             <td>${item.model_name}</td>
             <td style="color:#64748b;">${item.category || 'General'}</td>
-            <td><span class="badge badge-${status}">${status}</span></td>
+            <td><span class="badge badge-${status}">${status.replace('_', ' ')}</span></td>
             <td><span class="cond-${condition}">${condition.toUpperCase()}</span></td>
             <td>${eventOrNotes}</td>
+            <td>
+              <button class="btn-print" onclick="printSingleBarcode('${item.barcode}', '${safeModel}', '${safeCategory}')">
+                🖨️ Print
+              </button>
+            </td>
           </tr>
         `;
       }).join('');
@@ -264,11 +281,12 @@ function printBarcodeLabels(equipmentList) {
 
       const filtered = rawInventory.filter(item => {
         const matchesQuery = !query || 
-          item.model_name.toLowerCase().includes(query) || 
-          item.barcode.toLowerCase().includes(query);
+          (item.model_name && item.model_name.toLowerCase().includes(query)) || 
+          (item.barcode && item.barcode.toLowerCase().includes(query));
         
-        const matchesStatus = !status || (item.status && item.status.toLowerCase() === status);
-        const matchesCondition = !condition || (item.condition && item.condition.toLowerCase() === condition);
+        const itemStatus = (item.status || '').toLowerCase();
+        const matchesStatus = !status || itemStatus === status || (status === 'in_use' && itemStatus === 'on_hire');
+        const matchesCondition = !condition || ((item.condition || '').toLowerCase() === condition);
 
         return matchesQuery && matchesStatus && matchesCondition;
       });
@@ -276,59 +294,28 @@ function printBarcodeLabels(equipmentList) {
       renderTable(filtered);
     }
 
-// In your function that renders equipment rows:
-function renderTable(items) {
-  const tbody = document.getElementById('inventory-table-body');
-  tbody.innerHTML = '';
+    function printSingleBarcode(barcode, modelName, category) {
+      const container = document.getElementById('print-container');
+      
+      container.innerHTML = `
+        <div class="print-label-card">
+          <div style="font-weight: bold; font-size: 13px; margin-bottom: 4px;">${modelName}</div>
+          <svg id="single-barcode"></svg>
+          <div style="font-size: 11px; color: #444; margin-top: 2px;">${category}</div>
+        </div>
+      `;
 
-  items.forEach(item => {
-    const row = document.createElement('tr');
-    row.innerHTML = `
-      <td><strong>${item.barcode}</strong></td>
-      <td>${item.model_name}</td>
-      <td>${item.category}</td>
-      <td><span class="badge ${item.status}">${item.status}</span></td>
-      <td>${item.condition}</td>
-      <td>
-        <button class="btn-print" onclick="printSingleBarcode('${item.barcode}', '${item.model_name.replace(/'/g, "\\'")}', '${item.category}')">
-          🖨️ Print Label
-        </button>
-      </td>
-    `;
-    tbody.appendChild(row);
-  });
-}
+      JsBarcode("#single-barcode", barcode, {
+        format: "CODE128",
+        width: 1.8,
+        height: 45,
+        displayValue: true,
+        fontSize: 13,
+        margin: 5
+      });
 
-// Single-label print trigger
-function printSingleBarcode(barcode, modelName, category) {
-  const container = document.getElementById('print-container');
-  
-  // Format the label card
-  container.innerHTML = `
-    <div class="print-label-card">
-      <div style="font-weight: bold; font-size: 13px; margin-bottom: 4px;">${modelName}</div>
-      <svg id="single-barcode"></svg>
-      <div style="font-size: 11px; color: #444; margin-top: 2px;">${category}</div>
-    </div>
-  `;
-
-  // Generate the Code 128 barcode
-  JsBarcode("#single-barcode", barcode, {
-    format: "CODE128",
-    width: 1.8,
-    height: 45,
-    displayValue: true,
-    fontSize: 13,
-    margin: 5
-  });
-
-  // Open system print dialog
-  window.print();
-}
-
+      window.print();
+    }
   </script>
-
-<div id="print-container"></div>
-
 </body>
 </html>
