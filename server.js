@@ -34,12 +34,12 @@ app.get('/api/events', async (req, res) => {
 // 2. Scan / Search Barcode
 app.get('/api/scan/:barcode', async (req, res) => {
   try {
-    const { barcode } = req.params;
+    const barcode = req.params.barcode.trim();
     const query = `
       SELECT e.*, ev.event_name, ev.expected_return_date 
       FROM equipment e
       LEFT JOIN events ev ON e.current_event_id = ev.id
-      WHERE e.barcode = $1;
+      WHERE LOWER(TRIM(e.barcode)) = LOWER($1);
     `;
     const result = await pool.query(query, [barcode]);
 
@@ -51,6 +51,7 @@ app.get('/api/scan/:barcode', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
 
 // 3. Dispatch / Check-Out
 app.post('/api/dispatch', async (req, res) => {

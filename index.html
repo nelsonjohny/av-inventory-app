@@ -137,7 +137,7 @@
       if (!barcode) return alert('Please enter a barcode');
 
       try {
-        const res = await fetch('/api/scan/${barcode}');
+        const res = await fetch(`/api/scan/${encodeURIComponent(barcodeInput.trim())}`);
         if (!res.ok) {
           const err = await res.json();
           throw new Error(err.error || 'Equipment not found');
