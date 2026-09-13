@@ -252,6 +252,71 @@ app.get('/api/equipment', async (req, res) => {
 });
 
 
+
+// 9. POST /api/events - Create new event/job
+app.post('/api/events', async (req, res) => {
+  try {
+    const { event_name, company_name, location, start_date, expected_return_date } = req.body;
+
+    if (!event_name || !expected_return_date) {
+      return res.status(400).json({ error: 'Event name and expected return date are required' });
+    }
+
+    const query = `
+      INSERT INTO events (event_name, company_name, location, start_date, expected_return_date)
+      VALUES ($1, $2, $3, $4, $5)
+      RETURNING *;
+    `;
+    const values = [
+      event_name.trim(),
+      company_name ? company_name.trim() : null,
+      location ? location.trim() : null,
+      start_date || new Date().toISOString().split('T')[0],
+      expected_return_date
+    ];
+
+    const result = await pool.query(query, values);
+    res.status(201).json(result.rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 10. GET /api/events/:id/equipment - Fetch items assigned or returned for an event
+app.get('/api/events/:id/equipment', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const query = `
+      SELECT DISTINCT 
+        e.id,
+        e.barcode,
+        e.model_name,
+        e.category,
+        e.condition,
+        CASE 
+          WHEN e.current_event_id = $1 THEN 'ON_HIRE'
+          ELSE 'RETURNED'
+        END AS event_equipment_status
+      FROM equipment e
+      WHERE e.current_event_id = $1
+         OR e.id IN (
+           SELECT equipment_id 
+           FROM transactions 
+           WHERE event_id = $1
+         )
+      ORDER BY event_equipment_status ASC, e.model_name ASC;
+    `;
+
+    const result = await pool.query(query, [id]);
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
+
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);

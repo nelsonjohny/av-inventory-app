@@ -94,7 +94,8 @@
       loadEvents();
     };
 
-    async function loadEvents() {
+
+async function loadEvents() {
       const select = document.getElementById('eventSelect');
       try {
         const res = await fetch('/api/events');
@@ -106,13 +107,19 @@
           return;
         }
 
-        select.innerHTML = events.map(e => `
-          <option value="${e.id}">${e.event_name || e.name || 'Unnamed Event'} (${e.client_name || 'No Client'})</option>
-        `).join('');
+        select.innerHTML = events.map(e => {
+          const title = e.event_name || e.name || 'Unnamed Event';
+          const company = e.company_name || e.client_name ? ` (${e.company_name || e.client_name})` : '';
+          const venue = e.location ? ` - ${e.location}` : '';
+          const dateStr = e.start_date ? ` [${new Date(e.start_date).toLocaleDateString()}]` : '';
+
+          return `<option value="${e.id}">${title}${company}${venue}${dateStr}</option>`;
+        }).join('');
       } catch (err) {
         select.innerHTML = '<option value="">Cannot connect to server. Is node server.js running?</option>';
       }
     }
+
 
     function toggleCamera() {
       const readerEl = document.getElementById('reader');
