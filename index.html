@@ -132,12 +132,12 @@
       }
     }
 
-    async function searchItem() {
+async function searchItem() {
       const barcode = document.getElementById('barcodeInput').value.trim();
       if (!barcode) return alert('Please enter a barcode');
 
       try {
-        const res = await fetch(`/api/scan/${encodeURIComponent(barcodeInput.trim())}`);
+        const res = await fetch(`/api/scan/${encodeURIComponent(barcode)}`);
         if (!res.ok) {
           const err = await res.json();
           throw new Error(err.error || 'Equipment not found');
