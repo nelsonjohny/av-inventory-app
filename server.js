@@ -6,8 +6,9 @@ const path = require('path');
 const app = express();
 app.use(cors());
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-// This line allows your browser to open index.html, reports.html, etc. directly from Render
+// Serve static HTML, JS, and CSS files directly
 app.use(express.static(__dirname));
 
 // Use the cloud database URL if available, otherwise fall back to your Neon string
@@ -18,24 +19,27 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false }
 });
 
-
-
-// 1. Fetch Active Events for the dropdown
-// GET all events
+// 1. Fetch all events for dropdowns and listings
 app.get('/api/events', async (req, res) => {
   try {
     const query = `
-      SELECT id, event_name, company_name, location, start_date, expected_return_date 
+      SELECT 
+        id, 
+        event_name, 
+        company_name, 
+        location, 
+        start_date, 
+        expected_return_date 
       FROM events 
       ORDER BY id DESC;
     `;
     const result = await pool.query(query);
     res.json(result.rows);
   } catch (err) {
+    console.error('Error fetching events:', err);
     res.status(500).json({ error: err.message });
   }
 });
-
 
 // 2. Scan / Search Barcode
 app.get('/api/scan/:barcode', async (req, res) => {
@@ -54,10 +58,10 @@ app.get('/api/scan/:barcode', async (req, res) => {
     }
     res.json(result.rows[0]);
   } catch (err) {
+    console.error('Error scanning barcode:', err);
     res.status(500).json({ error: err.message });
   }
 });
-
 
 // 3. Dispatch / Check-Out
 app.post('/api/dispatch', async (req, res) => {
@@ -136,7 +140,7 @@ app.get('/api/reports/overdue', async (req, res) => {
         e.model_name,
         e.category,
         ev.event_name,
-        ev.client_name,
+        COALESCE(ev.company_name, ev.client_name, 'N/A') AS company_name,
         ev.expected_return_date,
         ROUND(EXTRACT(EPOCH FROM (CURRENT_TIMESTAMP - ev.expected_return_date)) / 3600)::INT AS hours_overdue,
         COALESCE(
@@ -160,7 +164,6 @@ app.get('/api/reports/overdue', async (req, res) => {
 // 6. Report: 7-Day Equipment Activity & Utilization Summary
 app.get('/api/reports/weekly-summary', async (req, res) => {
   try {
-    // KPI Counts
     const kpiQuery = `
       SELECT
         (SELECT COUNT(*) FROM equipment) AS total_inventory,
@@ -172,7 +175,6 @@ app.get('/api/reports/weekly-summary', async (req, res) => {
     `;
     const kpiResult = await pool.query(kpiQuery);
 
-    // Recent 7-Day Audit Log Feed
     const logsQuery = `
       SELECT 
         l.action_type,
@@ -205,7 +207,7 @@ app.get('/api/reports/weekly-summary', async (req, res) => {
 // 7. Inventory: Add New Equipment
 app.post('/api/equipment', async (req, res) => {
   try {
-    const { barcode, model_name, category, daily_rental_rate } = req.body;
+    const { barcode, model_name, category } = req.body;
 
     if (!barcode || !model_name || !category) {
       return res.status(400).json({ error: 'Barcode, model name, and category are required.' });
@@ -223,7 +225,6 @@ app.post('/api/equipment', async (req, res) => {
       item: result.rows[0]
     });
   } catch (err) {
-    // Catch unique barcode constraint violation (Postgres error code 23505)
     if (err.code === '23505') {
       return res.status(400).json({ error: 'An item with this barcode already exists!' });
     }
@@ -257,15 +258,13 @@ app.get('/api/equipment', async (req, res) => {
   }
 });
 
-
-
 // 9. POST /api/events - Create new event/job
 app.post('/api/events', async (req, res) => {
   try {
     const { event_name, company_name, location, start_date, expected_return_date } = req.body;
 
     if (!event_name || !expected_return_date) {
-      return res.status(400).json({ error: 'Event name and expected return date are required' });
+      return res.status(400).json({ error: 'Event name and expected return date are required.' });
     }
 
     const query = `
@@ -284,6 +283,7 @@ app.post('/api/events', async (req, res) => {
     const result = await pool.query(query, values);
     res.status(201).json(result.rows[0]);
   } catch (err) {
+    console.error('Error creating event:', err);
     res.status(500).json({ error: err.message });
   }
 });
@@ -308,7 +308,7 @@ app.get('/api/events/:id/equipment', async (req, res) => {
       WHERE e.current_event_id = $1
          OR e.id IN (
            SELECT equipment_id 
-           FROM transactions 
+           FROM equipment_logs 
            WHERE event_id = $1
          )
       ORDER BY event_equipment_status ASC, e.model_name ASC;
@@ -317,14 +317,12 @@ app.get('/api/events/:id/equipment', async (req, res) => {
     const result = await pool.query(query, [id]);
     res.json(result.rows);
   } catch (err) {
+    console.error('Error fetching event equipment:', err);
     res.status(500).json({ error: err.message });
   }
 });
-
-
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
-
