@@ -42,7 +42,9 @@
     <select id="eventSelect">
       <option value="">Loading events from database...</option>
     </select>
-    <button type="button" onclick="loadEvents()" style="background:#64748b; font-size:13px; padding:6px;">↻ Refresh Events List</button>
+
+<button type="button" onclick="loadEvents()" style="padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1; background: #fff; cursor: pointer;"> ↻ Refresh Events List
+</button>
   </div>
 
   <!-- 2. Barcode Scanner / Input -->
@@ -98,32 +100,33 @@
       loadEvents();
     };
 
-
 async function loadEvents() {
-      const select = document.getElementById('eventSelect');
-      try {
-        const res = await fetch('/api/events');
-        if (!res.ok) throw new Error('API server returned error');
-        const events = await res.json();
+  const select = document.getElementById('eventSelect') || document.querySelector('select[name="event"]');
+  if (!select) return;
 
-        if (events.length === 0) {
-          select.innerHTML = '<option value="">No events found in database</option>';
-          return;
-        }
+  try {
+    const res = await fetch('/api/events');
+    if (!res.ok) throw new Error('Failed to load events');
+    const events = await res.json();
 
-        select.innerHTML = events.map(e => {
-          const title = e.event_name || e.name || 'Unnamed Event';
-          const company = e.company_name || e.client_name ? ` (${e.company_name || e.client_name})` : '';
-          const venue = e.location ? ` - ${e.location}` : '';
-          const dateStr = e.start_date ? ` [${new Date(e.start_date).toLocaleDateString()}]` : '';
-
-          return `<option value="${e.id}">${title}${company}${venue}${dateStr}</option>`;
-        }).join('');
-      } catch (err) {
-        select.innerHTML = '<option value="">Cannot connect to server. Is node server.js running?</option>';
-      }
+    if (!events || events.length === 0) {
+      select.innerHTML = '<option value="">No events available</option>';
+      return;
     }
 
+    select.innerHTML = events.map(e => {
+      const name = e.event_name || e.name || 'Untitled Event';
+      const company = e.company_name ? ` (${e.company_name})` : (e.client_name ? ` (${e.client_name})` : '');
+      const loc = e.location ? ` - ${e.location}` : '';
+      const dateStr = e.start_date ? ` [${new Date(e.start_date).toLocaleDateString()}]` : '';
+
+      return `<option value="${e.id}">${name}${company}${loc}${dateStr}</option>`;
+    }).join('');
+  } catch (err) {
+    console.error('Error fetching events:', err);
+    select.innerHTML = `<option value="">Error loading events: ${err.message}</option>`;
+  }
+}
 
     function toggleCamera() {
       const readerEl = document.getElementById('reader');

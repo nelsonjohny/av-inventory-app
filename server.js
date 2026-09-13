@@ -21,15 +21,21 @@ const pool = new Pool({
 
 
 // 1. Fetch Active Events for the dropdown
+// GET all events
 app.get('/api/events', async (req, res) => {
   try {
-    const result = await pool.query('SELECT * FROM events ORDER BY created_at DESC');
+    const query = `
+      SELECT id, event_name, company_name, location, start_date, expected_return_date 
+      FROM events 
+      ORDER BY id DESC;
+    `;
+    const result = await pool.query(query);
     res.json(result.rows);
   } catch (err) {
-    console.error('Error fetching events:', err);
     res.status(500).json({ error: err.message });
   }
 });
+
 
 // 2. Scan / Search Barcode
 app.get('/api/scan/:barcode', async (req, res) => {
