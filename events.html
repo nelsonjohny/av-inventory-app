@@ -5,29 +5,129 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AV Inventory - Event Management & Equipment Tracker</title>
   <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 1050px; margin: 2rem auto; padding: 0 1rem; color: #1e293b; background: #f8fafc; }
-    .nav { margin-bottom: 1.5rem; display: flex; gap: 12px; font-size: 14px; font-weight: 600; }
-    .nav a { color: #2563eb; text-decoration: none; }
-    .nav a:hover { text-decoration: underline; }
+    body { 
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+      max-width: 1100px; 
+      margin: 2rem auto; 
+      padding: 0 1rem; 
+      color: #1e293b; 
+      background: #f8fafc; 
+    }
+    .nav { 
+      margin-bottom: 1.5rem; 
+      display: flex; 
+      gap: 12px; 
+      font-size: 14px; 
+      font-weight: 600; 
+    }
+    .nav a { 
+      color: #2563eb; 
+      text-decoration: none; 
+    }
+    .nav a:hover { 
+      text-decoration: underline; 
+    }
 
-    .grid { display: grid; grid-template-columns: 360px 1fr; gap: 20px; }
-    @media (max-width: 850px) { .grid { grid-template-columns: 1fr; } }
+    .grid { 
+      display: grid; 
+      grid-template-columns: 380px 1fr; 
+      gap: 24px; 
+    }
+    @media (max-width: 850px) { 
+      .grid { grid-template-columns: 1fr; } 
+    }
 
-    .card { background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+    .card { 
+      background: white; 
+      border: 1px solid #e2e8f0; 
+      border-radius: 8px; 
+      padding: 20px; 
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05); 
+    }
     h2, h3 { margin-top: 0; }
 
-    label { display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px; text-transform: uppercase; }
-    input, select { width: 100%; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; box-sizing: border-box; margin-bottom: 14px; }
+    label { 
+      display: block; 
+      font-size: 12px; 
+      font-weight: 600; 
+      color: #475569; 
+      margin-bottom: 4px; 
+      text-transform: uppercase; 
+      letter-spacing: 0.5px;
+    }
+    input, select { 
+      width: 100%; 
+      padding: 9px 12px; 
+      border: 1px solid #cbd5e1; 
+      border-radius: 6px; 
+      font-size: 14px; 
+      box-sizing: border-box; 
+      margin-bottom: 14px; 
+      background: #fff;
+    }
+    input:focus, select:focus {
+      outline: none;
+      border-color: #2563eb;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    }
 
-    button { background: #2563eb; color: white; border: none; padding: 10px 14px; border-radius: 6px; font-weight: 600; cursor: pointer; width: 100%; }
-    button:hover { background: #1d4ed8; }
+    button.btn-primary { 
+      background: #2563eb; 
+      color: white; 
+      border: none; 
+      padding: 11px 16px; 
+      border-radius: 6px; 
+      font-weight: 600; 
+      font-size: 14px;
+      cursor: pointer; 
+      width: 100%; 
+    }
+    button.btn-primary:hover { 
+      background: #1d4ed8; 
+    }
 
-    table { width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; margin-top: 10px; }
-    th, td { padding: 10px 12px; border-bottom: 1px solid #f1f5f9; }
-    th { background: #f8fafc; color: #475569; font-size: 11px; text-transform: uppercase; }
+    #statusMessage {
+      margin-top: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      text-align: center;
+      display: none;
+    }
 
-    .badge-hire { background: #fee2e2; color: #991b1b; padding: 3px 6px; border-radius: 4px; font-weight: 700; font-size: 11px; }
-    .badge-returned { background: #dcfce7; color: #166534; padding: 3px 6px; border-radius: 4px; font-weight: 700; font-size: 11px; }
+    table { 
+      width: 100%; 
+      border-collapse: collapse; 
+      text-align: left; 
+      font-size: 13px; 
+      margin-top: 10px; 
+    }
+    th, td { 
+      padding: 10px 12px; 
+      border-bottom: 1px solid #f1f5f9; 
+    }
+    th { 
+      background: #f8fafc; 
+      color: #475569; 
+      font-size: 11px; 
+      text-transform: uppercase; 
+    }
+
+    .badge-hire { 
+      background: #fee2e2; 
+      color: #991b1b; 
+      padding: 3px 6px; 
+      border-radius: 4px; 
+      font-weight: 700; 
+      font-size: 11px; 
+    }
+    .badge-returned { 
+      background: #dcfce7; 
+      color: #166534; 
+      padding: 3px 6px; 
+      border-radius: 4px; 
+      font-weight: 700; 
+      font-size: 11px; 
+    }
   </style>
 </head>
 <body>
@@ -44,34 +144,36 @@
     <!-- 1. Add Event Form -->
     <div class="card">
       <h3>+ Create New Event / Job</h3>
-      <form id="eventForm" onsubmit="createEvent(event)">
-        <label>Event / Job Title *</label>
+      <form id="eventForm" onsubmit="handleCreateEvent(event)">
+        <label for="eventName">Event / Job Title *</label>
         <input type="text" id="eventName" placeholder="e.g. Annual Gala 2026" required />
 
-        <label>Company / Client Name</label>
+        <label for="companyName">Company / Client Name</label>
         <input type="text" id="companyName" placeholder="e.g. Vertex Media" />
 
-        <label>Venue / Location</label>
+        <label for="location">Venue / Location</label>
         <input type="text" id="location" placeholder="e.g. Hall A, Grand Ballroom" />
 
-        <label>Start Date</label>
+        <label for="startDate">Start Date *</label>
         <input type="date" id="startDate" required />
 
-        <label>Expected Return Date *</label>
+        <label for="returnDate">Expected Return Date *</label>
         <input type="date" id="returnDate" required />
 
-        <button type="submit" id="saveEventBtn">Create Event</button>
+        <button type="submit" id="saveEventBtn" class="btn-primary">Create Event</button>
+        <div id="statusMessage"></div>
       </form>
     </div>
 
     <!-- 2. Searchable Event Equipment Status -->
     <div class="card">
       <h3>Event Equipment Tracker</h3>
-      <label>Search & Select Event:</label>
+      <label for="eventSearchInput">Search Event:</label>
       <input type="text" id="eventSearchInput" placeholder="Type event name, company, or venue..." oninput="filterEventOptions()" />
       
-      <select id="eventSelect" size="5" onchange="loadEventEquipment()">
-        <!-- Populated via API -->
+      <label for="eventSelect">Select Event to View Gear:</label>
+      <select id="eventSelect" size="6" onchange="loadEventEquipment()">
+        <option value="">Loading events...</option>
       </select>
 
       <div id="equipmentResults" style="margin-top: 15px;">
@@ -84,24 +186,29 @@
     let allEvents = [];
 
     window.onload = async () => {
-      document.getElementById('startDate').value = new Date().toISOString().split('T')[0];
+      // Set default start date to today
+      const today = new Date().toISOString().split('T')[0];
+      document.getElementById('startDate').value = today;
+      document.getElementById('returnDate').value = today;
       await fetchEvents();
     };
 
     async function fetchEvents() {
       try {
         const res = await fetch('/api/events');
+        if (!res.ok) throw new Error('Server returned ' + res.status);
         allEvents = await res.json();
         renderEventSelect(allEvents);
       } catch (err) {
         console.error('Failed to load events:', err);
+        document.getElementById('eventSelect').innerHTML = `<option value="">Error: ${err.message}</option>`;
       }
     }
 
     function renderEventSelect(events) {
       const select = document.getElementById('eventSelect');
-      if (events.length === 0) {
-        select.innerHTML = '<option value="">No events recorded yet</option>';
+      if (!events || events.length === 0) {
+        select.innerHTML = '<option value="">No events found</option>';
         return;
       }
       select.innerHTML = events.map(ev => {
@@ -112,7 +219,7 @@
     }
 
     function filterEventOptions() {
-      const q = document.getElementById('eventSearchInput').value.toLowerCase();
+      const q = document.getElementById('eventSearchInput').value.trim().toLowerCase();
       const filtered = allEvents.filter(ev => 
         (ev.event_name && ev.event_name.toLowerCase().includes(q)) ||
         (ev.company_name && ev.company_name.toLowerCase().includes(q)) ||
@@ -121,15 +228,27 @@
       renderEventSelect(filtered);
     }
 
-    async function createEvent(e) {
+    async function handleCreateEvent(e) {
       e.preventDefault();
+      const statusBox = document.getElementById('statusMessage');
+      const btn = document.getElementById('saveEventBtn');
+      
       const payload = {
-        event_name: document.getElementById('eventName').value,
-        company_name: document.getElementById('companyName').value,
-        location: document.getElementById('location').value,
+        event_name: document.getElementById('eventName').value.trim(),
+        company_name: document.getElementById('companyName').value.trim(),
+        location: document.getElementById('location').value.trim(),
         start_date: document.getElementById('startDate').value,
         expected_return_date: document.getElementById('returnDate').value
       };
+
+      if (!payload.event_name || !payload.expected_return_date) {
+        alert('Please provide both the Event Title and the Expected Return Date.');
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = 'Saving...';
+      statusBox.style.display = 'none';
 
       try {
         const res = await fetch('/api/events', {
@@ -138,17 +257,30 @@
           body: JSON.stringify(payload)
         });
 
+        const data = await res.json();
+
         if (res.ok) {
-          alert('Event created successfully!');
-          document.getElementById('eventForm').reset();
-          document.getElementById('startDate').value = new Date().toISOString().split('T')[0];
+          statusBox.style.display = 'block';
+          statusBox.style.color = '#15803d';
+          statusBox.textContent = '✅ Event created successfully!';
+          
+          document.getElementById('eventName').value = '';
+          document.getElementById('companyName').value = '';
+          document.getElementById('location').value = '';
+
           await fetchEvents();
         } else {
-          const err = await res.json();
-          alert('Error: ' + err.error);
+          statusBox.style.display = 'block';
+          statusBox.style.color = '#dc2626';
+          statusBox.textContent = `❌ Error: ${data.error || 'Could not save event'}`;
         }
       } catch (err) {
-        alert('Network error: ' + err.message);
+        statusBox.style.display = 'block';
+        statusBox.style.color = '#dc2626';
+        statusBox.textContent = `❌ Network Error: ${err.message}`;
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Create Event';
       }
     }
 
@@ -161,6 +293,7 @@
 
       try {
         const res = await fetch(`/api/events/${eventId}/equipment`);
+        if (!res.ok) throw new Error('Failed to load equipment');
         const items = await res.json();
 
         if (items.length === 0) {
