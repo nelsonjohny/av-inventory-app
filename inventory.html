@@ -1,6 +1,109 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
+
+<!-- JsBarcode Library -->
+<script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
+
+<style>
+  /* Single-label print layout */
+  @media print {
+    body * {
+      visibility: hidden;
+    }
+    #print-container, #print-container * {
+      visibility: visible;
+    }
+    #print-container {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding-top: 20px;
+    }
+    .print-label-card {
+      border: 1px dashed #333;
+      padding: 12px 20px;
+      text-align: center;
+      width: 250px;
+      page-break-inside: avoid;
+    }
+  }
+
+  .btn-print {
+    background-color: #4b5563;
+    color: #ffffff;
+    border: none;
+    padding: 4px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+  }
+  .btn-print:hover {
+    background-color: #374151;
+  }
+</style>
+
+
+<style>
+  @media print {
+    body * {
+      visibility: hidden;
+    }
+    #print-container, #print-container * {
+      visibility: visible;
+    }
+    #print-container {
+      position: absolute;
+      left: 0;
+      top: 0;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      width: 100%;
+    }
+    .label-card {
+      border: 1px dashed #ccc;
+      padding: 8px;
+      text-align: center;
+      page-break-inside: avoid;
+    }
+  }
+</style>
+
+<div id="print-container"></div>
+
+function printBarcodeLabels(equipmentList) {
+  const container = document.getElementById('print-container');
+  container.innerHTML = '';
+
+  equipmentList.forEach(item => {
+    const card = document.createElement('div');
+    card.className = 'label-card';
+    card.innerHTML = `
+      <div style="font-weight: bold; font-size: 12px;">${item.model_name}</div>
+      <svg id="barcode-${item.barcode}"></svg>
+      <div style="font-size: 10px; color: #555;">${item.category}</div>
+    `;
+    container.appendChild(card);
+
+    JsBarcode(`#barcode-${item.barcode}`, item.barcode, {
+      format: "CODE128",
+      width: 1.5,
+      height: 40,
+      displayValue: true,
+      fontSize: 12
+    });
+  });
+
+  window.print();
+}
+
+
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AV Inventory - Master Equipment List</title>
@@ -73,6 +176,22 @@
   <!-- Table View -->
   <div class="card">
     <table>
+
+<thead>
+  <tr>
+    <th>Barcode</th>
+    <th>Model Name</th>
+    <th>Category</th>
+    <th>Status</th>
+    <th>Condition</th>
+    <th>Actions</th>
+  </tr>
+</thead>
+<tbody id="inventory-table-body">
+  <!-- Dynamic rows go here -->
+</tbody>
+
+
       <thead>
         <tr>
           <th>Barcode</th>
@@ -156,6 +275,60 @@
 
       renderTable(filtered);
     }
+
+// In your function that renders equipment rows:
+function renderTable(items) {
+  const tbody = document.getElementById('inventory-table-body');
+  tbody.innerHTML = '';
+
+  items.forEach(item => {
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td><strong>${item.barcode}</strong></td>
+      <td>${item.model_name}</td>
+      <td>${item.category}</td>
+      <td><span class="badge ${item.status}">${item.status}</span></td>
+      <td>${item.condition}</td>
+      <td>
+        <button class="btn-print" onclick="printSingleBarcode('${item.barcode}', '${item.model_name.replace(/'/g, "\\'")}', '${item.category}')">
+          🖨️ Print Label
+        </button>
+      </td>
+    `;
+    tbody.appendChild(row);
+  });
+}
+
+// Single-label print trigger
+function printSingleBarcode(barcode, modelName, category) {
+  const container = document.getElementById('print-container');
+  
+  // Format the label card
+  container.innerHTML = `
+    <div class="print-label-card">
+      <div style="font-weight: bold; font-size: 13px; margin-bottom: 4px;">${modelName}</div>
+      <svg id="single-barcode"></svg>
+      <div style="font-size: 11px; color: #444; margin-top: 2px;">${category}</div>
+    </div>
+  `;
+
+  // Generate the Code 128 barcode
+  JsBarcode("#single-barcode", barcode, {
+    format: "CODE128",
+    width: 1.8,
+    height: 45,
+    displayValue: true,
+    fontSize: 13,
+    margin: 5
+  });
+
+  // Open system print dialog
+  window.print();
+}
+
   </script>
+
+<div id="print-container"></div>
+
 </body>
 </html>
