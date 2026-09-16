@@ -271,7 +271,7 @@ app.put('/api/equipment/:id', async (req, res) => {
 
     await client.query('BEGIN');
 
-    // Update equipment attributes
+    // Fixed: explicitly cast NULL to INT so PostgreSQL knows parameter types
     const updateQuery = `
       UPDATE equipment 
       SET 
@@ -280,8 +280,11 @@ app.put('/api/equipment/:id', async (req, res) => {
         status = $3,
         condition = $4,
         remarks = $5,
-        current_event_id = CASE WHEN $3 = 'available' OR $3 = 'maintenance' THEN NULL ELSE current_event_id END
-      WHERE id = $6
+        current_event_id = CASE 
+          WHEN $3 IN ('available', 'maintenance') THEN NULL::INT 
+          ELSE current_event_id 
+        END
+      WHERE id = $6::INT
       RETURNING *;
     `;
     const updateRes = await client.query(updateQuery, [
@@ -301,7 +304,7 @@ app.put('/api/equipment/:id', async (req, res) => {
     // Log the maintenance or edit action
     await client.query(
       `INSERT INTO equipment_logs (equipment_id, action_type, employee_name, condition, remarks) 
-       VALUES ($1, $2, $3, $4, $5)`,
+       VALUES ($1::INT, $2, $3, $4, $5)`,
       [
         id, 
         status === 'maintenance' ? 'MAINTENANCE_IN' : 'EDIT_UPDATE', 
@@ -321,6 +324,7 @@ app.put('/api/equipment/:id', async (req, res) => {
     client.release();
   }
 });
+
 
 
 // 9. POST /api/events - Create new event/job
