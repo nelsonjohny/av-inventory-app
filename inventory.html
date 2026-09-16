@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<link rel="icon" href="data:,">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AV Inventory - Master Equipment List</title>
@@ -308,8 +309,10 @@
             <td><span class="cond-${condition}">${condition.toUpperCase()}</span></td>
             <td>${eventOrNotes}</td>
             <td>
-              <button class="btn-action btn-print" onclick="printSingleBarcode('${item.barcode}', '${safeModel}', '${safeCategory}')">🖨️</button>
-              <button class="btn-action btn-edit" onclick="openEditModal(${item.id})">✏️ Service</button>
+              <td>
+  <button type="button" class="btn-action btn-print" data-barcode="${item.barcode}" onclick="handlePrintBtn(this)">🖨️</button>
+  <button type="button" class="btn-action btn-edit" data-id="${item.id}" onclick="handleEditBtn(this)">✏️ Service</button>
+</td>
             </td>
           </tr>
         `;
@@ -318,26 +321,42 @@
       document.getElementById('selectAll').checked = false;
       updateSelectedCounter();
     }
+function handleEditBtn(btn) {
+  const id = btn.getAttribute('data-id');
+  openEditModal(id);
+}
 
-    function openEditModal(id) {
-      const item = rawInventory.find(i => i.id === id);
-      if (!item) return;
+function handlePrintBtn(btn) {
+  const barcode = btn.getAttribute('data-barcode');
+  const item = rawInventory.find(i => String(i.barcode) === String(barcode));
+  if (item) {
+    printSingleBarcode(item.barcode, item.model_name || '', item.category || 'General');
+  }
+}
+ function openEditModal(id) {
+  const item = rawInventory.find(i => String(i.id) === String(id));
+  if (!item) {
+    console.error('Equipment item not found for ID:', id);
+    return;
+  }
 
-      document.getElementById('editItemId').value = item.id;
-      document.getElementById('editBarcode').value = item.barcode;
-      document.getElementById('editModelName').value = item.model_name;
-      document.getElementById('editCategory').value = item.category;
-      document.getElementById('editStatus').value = item.status === 'on_hire' ? 'available' : item.status;
-      document.getElementById('editCondition').value = item.condition || 'good';
-      document.getElementById('editRemarks').value = item.remarks || '';
-      document.getElementById('editTechnician').value = '';
+  document.getElementById('editItemId').value = item.id;
+  document.getElementById('editBarcode').value = item.barcode || '';
+  document.getElementById('editModelName').value = item.model_name || '';
+  document.getElementById('editCategory').value = item.category || 'General';
+  document.getElementById('editStatus').value = item.status === 'on_hire' ? 'available' : (item.status || 'available');
+  document.getElementById('editCondition').value = item.condition || 'good';
+  document.getElementById('editRemarks').value = item.remarks || '';
+  document.getElementById('editTechnician').value = '';
 
-      document.getElementById('editModal').style.display = 'flex';
-    }
+  const modal = document.getElementById('editModal');
+  modal.style.setProperty('display', 'flex', 'important');
+}
 
-    function closeEditModal() {
-      document.getElementById('editModal').style.display = 'none';
-    }
+function closeEditModal() {
+  const modal = document.getElementById('editModal');
+  modal.style.setProperty('display', 'none', 'important');
+}
 
     async function saveEquipmentChanges() {
       const id = document.getElementById('editItemId').value;
