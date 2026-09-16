@@ -5,190 +5,346 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AV Inventory - Alerts & Reports</title>
   <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 900px; margin: 2rem auto; padding: 0 1rem; color: #1e293b; background: #f8fafc; }
-    h2, h3 { margin-bottom: 0.5rem; }
-    .nav { margin-bottom: 1.5rem; display: flex; gap: 10px; }
-    .nav a { color: #2563eb; text-decoration: none; font-weight: 600; font-size: 14px; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      max-width: 1100px;
+      margin: 2rem auto;
+      padding: 0 1rem;
+      color: #1e293b;
+      background: #f8fafc;
+    }
+    .nav {
+      margin-bottom: 1.5rem;
+      display: flex;
+      gap: 12px;
+      font-size: 14px;
+      font-weight: 600;
+    }
+    .nav a { color: #2563eb; text-decoration: none; }
     .nav a:hover { text-decoration: underline; }
-    
-    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; margin-bottom: 1.5rem; }
-    .stat-card { background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1rem; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-    .stat-number { font-size: 26px; font-weight: 700; color: #0f172a; margin-top: 4px; }
-    .stat-label { font-size: 12px; color: #64748b; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px; }
 
-    .card { background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-    .card-alert { border-left: 5px solid #ef4444; }
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 16px;
+      margin-bottom: 2rem;
+    }
+    .kpi-card {
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 16px;
+      text-align: center;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    .kpi-num {
+      font-size: 28px;
+      font-weight: 700;
+      color: #0f172a;
+      margin-top: 4px;
+    }
+    .kpi-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
 
-    table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
-    th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid #f1f5f9; }
-    th { background: #f8fafc; color: #475569; font-weight: 600; font-size: 12px; text-transform: uppercase; }
-    tr:hover { background: #f8fafc; }
+    .section-card {
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 2rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    h3 { margin: 0; }
 
-    .badge { display: inline-block; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; }
-    .badge-overdue { background: #fee2e2; color: #991b1b; }
-    .badge-dispatch { background: #dbeafe; color: #1e40af; }
-    .badge-return { background: #dcfce7; color: #166534; }
-    .badge-damaged { background: #fef3c7; color: #92400e; }
+    .btn-export {
+      background-color: #059669;
+      color: #ffffff;
+      border: none;
+      padding: 7px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .btn-export:hover { background-color: #047857; }
 
-    .empty-state { padding: 1.5rem; text-align: center; color: #64748b; font-style: italic; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 13px;
+    }
+    th, td {
+      padding: 10px 12px;
+      border-bottom: 1px solid #f1f5f9;
+    }
+    th {
+      background: #f8fafc;
+      color: #475569;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .badge-overdue {
+      background: #fee2e2;
+      color: #991b1b;
+      padding: 3px 6px;
+      border-radius: 4px;
+      font-weight: 700;
+    }
+    .badge-action {
+      background: #e0f2fe;
+      color: #0369a1;
+      padding: 3px 6px;
+      border-radius: 4px;
+      font-weight: 700;
+    }
   </style>
 </head>
 <body>
 
-<div class="nav">
-    <a href="index.html">← Back to Scanner Terminal</a>
+  <div class="nav">
+    <a href="index.html">← Terminal</a>
     <span>|</span>
-    <a href="inventory.html">📋 Inventory List</a>
+    <a href="events.html">📅 Events & Jobs</a>
     <span>|</span>
-    <a href="add-equipment.html">+ Add Equipment</a>
-    <span>|</span>
-    <a href="javascript:loadAllReports()">↻ Refresh Data</a>
+    <a href="inventory.html">📋 Master Inventory</a>
   </div>
 
+  <h2>System Analytics & Activity Reports</h2>
 
-
-  <h2>Rental Operations & Activity Reports</h2>
-  <p style="color:#64748b; margin-top:0;">Real-time asset tracking, overdue equipment alerts, and 7-day movement summaries.</p>
-
-  <!-- KPI Cards -->
-  <div class="grid" id="kpiGrid">
-    <div class="stat-card"><div class="stat-label">Total Fleet</div><div class="stat-number" id="kpiTotal">-</div></div>
-    <div class="stat-card"><div class="stat-label">Available</div><div class="stat-number" id="kpiAvail" style="color:#16a34a;">-</div></div>
-    <div class="stat-card"><div class="stat-label">On Hire</div><div class="stat-number" id="kpiHire" style="color:#2563eb;">-</div></div>
-    <div class="stat-card"><div class="stat-label">Maintenance</div><div class="stat-number" id="kpiMaint" style="color:#d97706;">-</div></div>
-    <div class="stat-card"><div class="stat-label">7-Day Moves</div><div class="stat-number" id="kpiMoves">-</div></div>
-    <div class="stat-card"><div class="stat-label">Damaged Returns</div><div class="stat-number" id="kpiDamaged" style="color:#dc2626;">-</div></div>
+  <!-- KPI Summaries -->
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <div class="kpi-label">Total Inventory</div>
+      <div class="kpi-num" id="kpiTotal">—</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Available</div>
+      <div class="kpi-num" style="color: #16a34a;" id="kpiAvailable">—</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">On Hire</div>
+      <div class="kpi-num" style="color: #dc2626;" id="kpiOnHire">—</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">In Maintenance</div>
+      <div class="kpi-num" style="color: #d97706;" id="kpiMaintenance">—</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">7-Day Movements</div>
+      <div class="kpi-num" id="kpiMovements">—</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Reported Damages</div>
+      <div class="kpi-num" style="color: #dc2626;" id="kpiDamages">—</div>
+    </div>
   </div>
 
-  <!-- Critical Alerts Table -->
-  <div class="card card-alert">
-    <h3 style="color: #dc2626; margin-top:0;">⚠️ Overdue Return Alerts</h3>
-    <div id="overdueContainer">Loading alerts...</div>
+  <!-- 1. Overdue Equipment Section -->
+  <div class="section-card">
+    <div class="section-header">
+      <h3>⚠️ Overdue Equipment Alerts</h3>
+      <button class="btn-export" onclick="exportOverdueToCSV()">📥 Export Alerts (CSV)</button>
+    </div>
+    <div style="overflow-x: auto;">
+      <table>
+        <thead>
+          <tr>
+            <th>Barcode</th>
+            <th>Model Name</th>
+            <th>Category</th>
+            <th>Event / Job</th>
+            <th>Company / Client</th>
+            <th>Expected Return</th>
+            <th>Hours Overdue</th>
+            <th>Dispatched By</th>
+          </tr>
+        </thead>
+        <tbody id="overdueBody">
+          <tr><td colspan="8" style="text-align:center; padding: 1.5rem; color:#64748b;">Loading alerts...</td></tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 
-  <!-- Weekly Activity Log -->
-  <div class="card">
-    <h3 style="margin-top:0;">7-Day Fleet Movement Log</h3>
-    <div id="activityContainer">Loading recent activity...</div>
+  <!-- 2. Recent Audit Feed Section -->
+  <div class="section-card">
+    <div class="section-header">
+      <h3>📋 7-Day Activity & Audit Log</h3>
+      <button class="btn-export" onclick="exportActivityToCSV()">📥 Export Log (CSV)</button>
+    </div>
+    <div style="overflow-x: auto;">
+      <table>
+        <thead>
+          <tr>
+            <th>Action</th>
+            <th>Barcode</th>
+            <th>Model Name</th>
+            <th>Event</th>
+            <th>Employee</th>
+            <th>Timestamp</th>
+            <th>Condition / Remarks</th>
+          </tr>
+        </thead>
+        <tbody id="activityBody">
+          <tr><td colspan="7" style="text-align:center; padding: 1.5rem; color:#64748b;">Loading recent log entries...</td></tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 
   <script>
-    window.onload = loadAllReports;
+    let overdueRecords = [];
+    let activityRecords = [];
 
-    async function loadAllReports() {
-      await Promise.all([loadOverdueAlerts(), loadWeeklySummary()]);
-    }
-
-    async function loadOverdueAlerts() {
-      const container = document.getElementById('overdueContainer');
-      try {
-        const res = await fetch('/api/reports/overdue');
-        const data = await res.json();
-
-        if (data.length === 0) {
-          container.innerHTML = '<div class="empty-state">✅ All gear is accounted for. No overdue items.</div>';
-          return;
-        }
-
-        let html = `
-          <table>
-            <thead>
-              <tr>
-                <th>Barcode</th>
-                <th>Model</th>
-                <th>Assigned Event</th>
-                <th>Dispatched By</th>
-                <th>Due Date</th>
-                <th>Delay</th>
-              </tr>
-            </thead>
-            <tbody>
-        `;
-
-        data.forEach(item => {
-          const dueDate = new Date(item.expected_return_date).toLocaleDateString();
-          html += `
-            <tr>
-              <td><strong>${item.barcode}</strong></td>
-              <td>${item.model_name}</td>
-              <td>${item.event_name} (${item.client_name || 'N/A'})</td>
-              <td>${item.dispatched_by || 'Unknown'}</td>
-              <td>${dueDate}</td>
-              <td><span class="badge badge-overdue">${item.hours_overdue} hrs late</span></td>
-            </tr>
-          `;
-        });
-
-        html += '</tbody></table>';
-        container.innerHTML = html;
-      } catch (err) {
-        container.innerHTML = `<div style="color:red;">Failed to fetch alerts: ${err.message}</div>`;
-      }
-    }
+    window.onload = async () => {
+      await Promise.all([loadWeeklySummary(), loadOverdueAlerts()]);
+    };
 
     async function loadWeeklySummary() {
       try {
         const res = await fetch('/api/reports/weekly-summary');
         const data = await res.json();
-        const { kpis, recentActivity } = data;
 
-        // Fill KPIs
-        document.getElementById('kpiTotal').textContent = kpis.total_inventory;
-        document.getElementById('kpiAvail').textContent = kpis.available_count;
-        document.getElementById('kpiHire').textContent = kpis.on_hire_count;
-        document.getElementById('kpiMaint').textContent = kpis.maintenance_count;
-        document.getElementById('kpiMoves').textContent = kpis.weekly_movements;
-        document.getElementById('kpiDamaged').textContent = kpis.weekly_damages;
+        // Populate KPIs
+        document.getElementById('kpiTotal').textContent = data.kpis.total_inventory || 0;
+        document.getElementById('kpiAvailable').textContent = data.kpis.available_count || 0;
+        document.getElementById('kpiOnHire').textContent = data.kpis.on_hire_count || 0;
+        document.getElementById('kpiMaintenance').textContent = data.kpis.maintenance_count || 0;
+        document.getElementById('kpiMovements').textContent = data.kpis.weekly_movements || 0;
+        document.getElementById('kpiDamages').textContent = data.kpis.weekly_damages || 0;
 
-        // Fill Activity Table
-        const container = document.getElementById('activityContainer');
-        if (recentActivity.length === 0) {
-          container.innerHTML = '<div class="empty-state">No equipment check-outs or check-ins recorded in the past 7 days.</div>';
+        // Populate Audit Feed
+        activityRecords = data.recentActivity || [];
+        const tbody = document.getElementById('activityBody');
+
+        if (activityRecords.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding: 1.5rem; color:#64748b;">No logged activity in the last 7 days.</td></tr>';
           return;
         }
 
-        let html = `
-          <table>
-            <thead>
-              <tr>
-                <th>Time</th>
-                <th>Action</th>
-                <th>Item</th>
-                <th>Staff</th>
-                <th>Event</th>
-                <th>Condition / Notes</th>
-              </tr>
-            </thead>
-            <tbody>
-        `;
-
-        recentActivity.forEach(row => {
-          const timeStr = new Date(row.action_timestamp).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-          const actionBadge = row.action_type === 'DISPATCH' 
-            ? '<span class="badge badge-dispatch">CHECK-OUT</span>' 
-            : '<span class="badge badge-return">CHECK-IN</span>';
-
-          const conditionBadge = row.condition && row.condition === 'damaged'
-            ? `<span class="badge badge-damaged">Damaged</span> `
-            : '';
-
-          html += `
-            <tr>
-              <td style="color:#64748b; font-size:12px;">${timeStr}</td>
-              <td>${actionBadge}</td>
-              <td><strong>${row.barcode}</strong> - ${row.model_name}</td>
-              <td>${row.employee_name}</td>
-              <td>${row.event_name || '—'}</td>
-              <td>${conditionBadge}${row.remarks || '—'}</td>
-            </tr>
-          `;
-        });
-
-        html += '</tbody></table>';
-        container.innerHTML = html;
+        tbody.innerHTML = activityRecords.map(log => `
+          <tr>
+            <td><span class="badge-action">${log.action_type}</span></td>
+            <td><code>${log.barcode}</code></td>
+            <td>${log.model_name}</td>
+            <td>${log.event_name || '—'}</td>
+            <td>${log.employee_name || 'System'}</td>
+            <td>${new Date(log.action_timestamp).toLocaleString()}</td>
+            <td>${log.condition ? `${log.condition.toUpperCase()}: ` : ''}${log.remarks || '—'}</td>
+          </tr>
+        `).join('');
       } catch (err) {
-        console.error('Failed to load summary stats', err);
+        console.error('Failed loading summary:', err);
       }
+    }
+
+    async function loadOverdueAlerts() {
+      try {
+        const res = await fetch('/api/reports/overdue');
+        overdueRecords = await res.json();
+        const tbody = document.getElementById('overdueBody');
+
+        if (overdueRecords.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding: 1.5rem; color:#16a34a; font-weight: 600;">✅ All dispatched gear is within expected schedule!</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = overdueRecords.map(item => `
+          <tr>
+            <td><code>${item.barcode}</code></td>
+            <td><strong>${item.model_name}</strong></td>
+            <td>${item.category || 'General'}</td>
+            <td>${item.event_name}</td>
+            <td>${item.company_name}</td>
+            <td>${new Date(item.expected_return_date).toLocaleDateString()}</td>
+            <td><span class="badge-overdue">${item.hours_overdue} hrs</span></td>
+            <td>${item.dispatched_by}</td>
+          </tr>
+        `).join('');
+      } catch (err) {
+        console.error('Failed loading overdue reports:', err);
+      }
+    }
+
+    // CSV helper to safely escape strings
+    function formatCSVRow(arr) {
+      return arr.map(field => {
+        const str = (field === null || field === undefined) ? '' : String(field);
+        return `"${str.replace(/"/g, '""')}"`;
+      }).join(',');
+    }
+
+    function triggerDownload(csvContent, filename) {
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.setAttribute('href', url);
+      link.setAttribute('download', filename);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    function exportOverdueToCSV() {
+      if (overdueRecords.length === 0) {
+        alert('No overdue gear records to export.');
+        return;
+      }
+
+      const headers = ['Barcode', 'Model Name', 'Category', 'Event Name', 'Company Name', 'Expected Return Date', 'Hours Overdue', 'Dispatched By'];
+      const rows = overdueRecords.map(r => [
+        r.barcode,
+        r.model_name,
+        r.category || 'General',
+        r.event_name,
+        r.company_name,
+        new Date(r.expected_return_date).toISOString(),
+        r.hours_overdue,
+        r.dispatched_by
+      ]);
+
+      const csv = [headers.join(','), ...rows.map(formatCSVRow)].join('\r\n');
+      triggerDownload(csv, `overdue_equipment_${new Date().toISOString().split('T')[0]}.csv`);
+    }
+
+    function exportActivityToCSV() {
+      if (activityRecords.length === 0) {
+        alert('No activity log records to export.');
+        return;
+      }
+
+      const headers = ['Action Type', 'Barcode', 'Model Name', 'Event Name', 'Employee Name', 'Timestamp', 'Condition', 'Remarks'];
+      const rows = activityRecords.map(r => [
+        r.action_type,
+        r.barcode,
+        r.model_name,
+        r.event_name || '',
+        r.employee_name || '',
+        new Date(r.action_timestamp).toISOString(),
+        r.condition || '',
+        r.remarks || ''
+      ]);
+
+      const csv = [headers.join(','), ...rows.map(formatCSVRow)].join('\r\n');
+      triggerDownload(csv, `weekly_audit_log_${new Date().toISOString().split('T')[0]}.csv`);
     }
   </script>
 </body>
