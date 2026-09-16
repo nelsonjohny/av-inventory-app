@@ -42,6 +42,12 @@
     }
     h2 { margin: 0; }
 
+    .header-actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
     .controls { 
       display: flex; 
       gap: 10px; 
@@ -137,6 +143,18 @@
     }
     .btn-batch-print:hover { background-color: #1e293b; }
 
+    .btn-export {
+      background-color: #059669;
+      color: #ffffff;
+      border: none;
+      padding: 8px 14px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .btn-export:hover { background-color: #047857; }
+
     /* Print Formatting */
     #print-container {
       display: none;
@@ -191,7 +209,10 @@
     <div>
       <h2>Master Inventory Catalog <span class="count-tag" id="itemCount">(Loading...)</span></h2>
     </div>
-    <div>
+    <div class="header-actions">
+      <button class="btn-export" onclick="exportInventoryToCSV()">
+        📥 Export Inventory (CSV)
+      </button>
       <button class="btn-batch-print" onclick="printSelectedBarcodes()">
         🖨️ Print Selected Labels (<span id="selectedCount">0</span>)
       </button>
@@ -380,6 +401,51 @@
       });
 
       window.print();
+    }
+
+    // --- CSV Export Logic ---
+    function formatCSVRow(arr) {
+      return arr.map(field => {
+        const str = (field === null || field === undefined) ? '' : String(field);
+        return `"${str.replace(/"/g, '""')}"`;
+      }).join(',');
+    }
+
+    function triggerDownload(csvContent, filename) {
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.setAttribute('href', url);
+      link.setAttribute('download', filename);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    function exportInventoryToCSV() {
+      // Export currently filtered items (or all items if unfiltered)
+      const listToExport = currentFiltered.length > 0 ? currentFiltered : rawInventory;
+
+      if (listToExport.length === 0) {
+        alert('No inventory items available to export.');
+        return;
+      }
+
+      const headers = ['ID', 'Barcode', 'Model Name', 'Category', 'Status', 'Condition', 'Current Event', 'Remarks'];
+      const rows = listToExport.map(item => [
+        item.id,
+        item.barcode,
+        item.model_name,
+        item.category || 'General',
+        item.status || 'available',
+        item.condition || 'good',
+        item.event_name || 'In Warehouse',
+        item.remarks || ''
+      ]);
+
+      const csv = [headers.join(','), ...rows.map(formatCSVRow)].join('\r\n');
+      const filename = `master_inventory_${new Date().toISOString().split('T')[0]}.csv`;
+      triggerDownload(csv, filename);
     }
   </script>
 </body>
