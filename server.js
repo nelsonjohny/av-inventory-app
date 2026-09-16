@@ -258,6 +258,71 @@ app.get('/api/equipment', async (req, res) => {
   }
 });
 
+// 8.1 Inventory: Update Equipment Details & Maintenance Status
+app.put('/api/equipment/:id', async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const { id } = req.params;
+    const { model_name, category, status, condition, remarks, employee_name } = req.body;
+
+    if (!model_name || !category || !status) {
+      return res.status(400).json({ error: 'Model name, category, and status are required.' });
+    }
+
+    await client.query('BEGIN');
+
+    // Update equipment attributes
+    const updateQuery = `
+      UPDATE equipment 
+      SET 
+        model_name = $1,
+        category = $2,
+        status = $3,
+        condition = $4,
+        remarks = $5,
+        current_event_id = CASE WHEN $3 = 'available' OR $3 = 'maintenance' THEN NULL ELSE current_event_id END
+      WHERE id = $6
+      RETURNING *;
+    `;
+    const updateRes = await client.query(updateQuery, [
+      model_name.trim(),
+      category.trim(),
+      status,
+      condition || 'good',
+      remarks || null,
+      id
+    ]);
+
+    if (updateRes.rows.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ error: 'Equipment not found' });
+    }
+
+    // Log the maintenance or edit action
+    await client.query(
+      `INSERT INTO equipment_logs (equipment_id, action_type, employee_name, condition, remarks) 
+       VALUES ($1, $2, $3, $4, $5)`,
+      [
+        id, 
+        status === 'maintenance' ? 'MAINTENANCE_IN' : 'EDIT_UPDATE', 
+        employee_name || 'Technician', 
+        condition, 
+        remarks || (status === 'maintenance' ? 'Marked for repair' : 'Item updated')
+      ]
+    );
+
+    await client.query('COMMIT');
+    res.json({ message: 'Equipment updated successfully!', item: updateRes.rows[0] });
+  } catch (err) {
+    await client.query('ROLLBACK');
+    console.error('Error updating equipment:', err);
+    res.status(500).json({ error: err.message });
+  } finally {
+    client.release();
+  }
+});
+
+
 // 9. POST /api/events - Create new event/job
 app.post('/api/events', async (req, res) => {
   try {

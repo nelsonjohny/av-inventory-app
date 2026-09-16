@@ -24,13 +24,8 @@
       font-size: 14px; 
       font-weight: 600; 
     }
-    .nav a { 
-      color: #2563eb; 
-      text-decoration: none; 
-    }
-    .nav a:hover { 
-      text-decoration: underline; 
-    }
+    .nav a { color: #2563eb; text-decoration: none; }
+    .nav a:hover { text-decoration: underline; }
 
     .header-bar { 
       display: flex; 
@@ -42,11 +37,7 @@
     }
     h2 { margin: 0; }
 
-    .header-actions {
-      display: flex;
-      gap: 8px;
-      align-items: center;
-    }
+    .header-actions { display: flex; gap: 8px; align-items: center; }
 
     .controls { 
       display: flex; 
@@ -62,10 +53,7 @@
       font-size: 14px; 
       background: white; 
     }
-    .controls input[type="text"] { 
-      flex: 1; 
-      min-width: 220px; 
-    }
+    .controls input[type="text"] { flex: 1; min-width: 220px; }
 
     .card { 
       background: white; 
@@ -74,16 +62,8 @@
       box-shadow: 0 1px 3px rgba(0,0,0,0.05); 
       overflow-x: auto; 
     }
-    table { 
-      width: 100%; 
-      border-collapse: collapse; 
-      text-align: left; 
-      font-size: 14px; 
-    }
-    th, td { 
-      padding: 12px 14px; 
-      border-bottom: 1px solid #f1f5f9; 
-    }
+    table { width: 100%; border-collapse: collapse; text-align: left; font-size: 14px; }
+    th, td { padding: 12px 14px; border-bottom: 1px solid #f1f5f9; }
     th { 
       background: #f8fafc; 
       color: #475569; 
@@ -92,9 +72,7 @@
       text-transform: uppercase; 
       letter-spacing: 0.5px; 
     }
-    tr:hover { 
-      background: #f8fafc; 
-    }
+    tr:hover { background: #f8fafc; }
 
     .badge { 
       display: inline-block; 
@@ -113,83 +91,67 @@
     .cond-fair { color: #d97706; font-weight: 600; }
     .cond-damaged { color: #dc2626; font-weight: 700; }
 
-    .count-tag { 
-      font-size: 13px; 
-      color: #64748b; 
-      font-weight: normal; 
-      margin-left: 8px; 
-    }
-
-    .btn-print {
-      background-color: #4b5563;
-      color: #ffffff;
+    .btn-action {
       border: none;
-      padding: 5px 10px;
+      padding: 5px 8px;
       border-radius: 4px;
       cursor: pointer;
       font-size: 12px;
+      font-weight: 600;
     }
+    .btn-print { background-color: #4b5563; color: white; }
     .btn-print:hover { background-color: #374151; }
+    .btn-edit { background-color: #f59e0b; color: white; margin-left: 4px; }
+    .btn-edit:hover { background-color: #d97706; }
 
-    .btn-batch-print {
-      background-color: #0f172a;
-      color: #ffffff;
-      border: none;
-      padding: 8px 14px;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 13px;
-      font-weight: 600;
-    }
-    .btn-batch-print:hover { background-color: #1e293b; }
+    .btn-batch-print { background-color: #0f172a; color: white; padding: 8px 14px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; border: none; }
+    .btn-export { background-color: #059669; color: white; padding: 8px 14px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; border: none; }
 
-    .btn-export {
-      background-color: #059669;
-      color: #ffffff;
-      border: none;
-      padding: 8px 14px;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 13px;
-      font-weight: 600;
-    }
-    .btn-export:hover { background-color: #047857; }
-
-    /* Print Formatting */
-    #print-container {
+    /* Modal Backdrop */
+    .modal-backdrop {
       display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.55);
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
     }
+    .modal {
+      background: white;
+      border-radius: 8px;
+      width: 100%;
+      max-width: 480px;
+      padding: 24px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    }
+    .modal h3 { margin-top: 0; margin-bottom: 12px; }
+    .modal label { display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px; text-transform: uppercase; }
+    .modal input, .modal select, .modal textarea {
+      width: 100%;
+      padding: 8px 10px;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      font-size: 14px;
+      box-sizing: border-box;
+      margin-bottom: 12px;
+    }
+    .modal-buttons { display: flex; justify-content: flex-end; gap: 8px; margin-top: 10px; }
+    .btn-cancel { background: #e2e8f0; color: #334155; border: none; padding: 8px 14px; border-radius: 6px; cursor: pointer; font-weight: 600; }
+    .btn-save { background: #2563eb; color: white; border: none; padding: 8px 14px; border-radius: 6px; cursor: pointer; font-weight: 600; }
 
+    #print-container { display: none; }
     @media print {
-      body * {
-        visibility: hidden;
-      }
-      #print-container, #print-container * {
-        visibility: visible;
-      }
+      body * { visibility: hidden; }
+      #print-container, #print-container * { visibility: visible; }
       #print-container {
         display: grid !important;
         grid-template-columns: repeat(3, 1fr);
         gap: 12px;
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 100%;
-        padding: 10px;
-        box-sizing: border-box;
+        position: absolute; left: 0; top: 0; width: 100%; padding: 10px; box-sizing: border-box;
       }
-      .label-card {
-        border: 1px dashed #475569;
-        border-radius: 4px;
-        padding: 8px 6px;
-        text-align: center;
-        page-break-inside: avoid;
-        background: #fff;
-      }
-      .label-card svg {
-        max-width: 100%;
-        height: auto;
-      }
+      .label-card { border: 1px dashed #475569; border-radius: 4px; padding: 8px 6px; text-align: center; page-break-inside: avoid; background: #fff; }
+      .label-card svg { max-width: 100%; height: auto; }
     }
   </style>
 </head>
@@ -210,16 +172,11 @@
       <h2>Master Inventory Catalog <span class="count-tag" id="itemCount">(Loading...)</span></h2>
     </div>
     <div class="header-actions">
-      <button class="btn-export" onclick="exportInventoryToCSV()">
-        📥 Export Inventory (CSV)
-      </button>
-      <button class="btn-batch-print" onclick="printSelectedBarcodes()">
-        🖨️ Print Selected Labels (<span id="selectedCount">0</span>)
-      </button>
+      <button class="btn-export" onclick="exportInventoryToCSV()">📥 Export Inventory (CSV)</button>
+      <button class="btn-batch-print" onclick="printSelectedBarcodes()">🖨️ Print Selected (<span id="selectedCount">0</span>)</button>
     </div>
   </div>
 
-  <!-- Filters -->
   <div class="controls">
     <input type="text" id="searchInput" placeholder="Search by model name or barcode..." oninput="filterTable()" />
     <select id="statusFilter" onchange="filterTable()">
@@ -237,7 +194,6 @@
     </select>
   </div>
 
-  <!-- Table View -->
   <div class="card">
     <table>
       <thead>
@@ -253,14 +209,54 @@
         </tr>
       </thead>
       <tbody id="inventoryBody">
-        <tr>
-          <td colspan="8" style="text-align:center; padding: 2rem; color:#64748b;">Loading inventory...</td>
-        </tr>
+        <tr><td colspan="8" style="text-align:center; padding: 2rem; color:#64748b;">Loading inventory...</td></tr>
       </tbody>
     </table>
   </div>
 
-  <!-- Print Canvas -->
+  <!-- Edit & Maintenance Modal -->
+  <div class="modal-backdrop" id="editModal">
+    <div class="modal">
+      <h3>Edit / Service Equipment</h3>
+      <input type="hidden" id="editItemId" />
+      
+      <label>Barcode</label>
+      <input type="text" id="editBarcode" disabled style="background:#f1f5f9; cursor:not-allowed;" />
+
+      <label>Model Name *</label>
+      <input type="text" id="editModelName" required />
+
+      <label>Category *</label>
+      <input type="text" id="editCategory" required />
+
+      <label>Equipment Status</label>
+      <select id="editStatus">
+        <option value="available">Available (In Warehouse)</option>
+        <option value="maintenance">🔧 Maintenance / Repair</option>
+        <option value="on_hire" disabled>On Hire (Assigned to Event)</option>
+      </select>
+
+      <label>Condition Assessment</label>
+      <select id="editCondition">
+        <option value="excellent">Excellent</option>
+        <option value="good">Good</option>
+        <option value="fair">Fair</option>
+        <option value="damaged">Damaged</option>
+      </select>
+
+      <label>Service / Condition Remarks</label>
+      <textarea id="editRemarks" rows="2" placeholder="e.g. Broken XLR pin repaired, cleaned optical lens"></textarea>
+
+      <label>Technician / Editor Name</label>
+      <input type="text" id="editTechnician" placeholder="e.g. John Doe" />
+
+      <div class="modal-buttons">
+        <button type="button" class="btn-cancel" onclick="closeEditModal()">Cancel</button>
+        <button type="button" class="btn-save" id="saveEditBtn" onclick="saveEquipmentChanges()">Save Changes</button>
+      </div>
+    </div>
+  </div>
+
   <div id="print-container"></div>
 
   <script>
@@ -312,9 +308,8 @@
             <td><span class="cond-${condition}">${condition.toUpperCase()}</span></td>
             <td>${eventOrNotes}</td>
             <td>
-              <button class="btn-print" onclick="printSingleBarcode('${item.barcode}', '${safeModel}', '${safeCategory}')">
-                🖨️ Print
-              </button>
+              <button class="btn-action btn-print" onclick="printSingleBarcode('${item.barcode}', '${safeModel}', '${safeCategory}')">🖨️</button>
+              <button class="btn-action btn-edit" onclick="openEditModal(${item.id})">✏️ Service</button>
             </td>
           </tr>
         `;
@@ -322,6 +317,64 @@
 
       document.getElementById('selectAll').checked = false;
       updateSelectedCounter();
+    }
+
+    function openEditModal(id) {
+      const item = rawInventory.find(i => i.id === id);
+      if (!item) return;
+
+      document.getElementById('editItemId').value = item.id;
+      document.getElementById('editBarcode').value = item.barcode;
+      document.getElementById('editModelName').value = item.model_name;
+      document.getElementById('editCategory').value = item.category;
+      document.getElementById('editStatus').value = item.status === 'on_hire' ? 'available' : item.status;
+      document.getElementById('editCondition').value = item.condition || 'good';
+      document.getElementById('editRemarks').value = item.remarks || '';
+      document.getElementById('editTechnician').value = '';
+
+      document.getElementById('editModal').style.display = 'flex';
+    }
+
+    function closeEditModal() {
+      document.getElementById('editModal').style.display = 'none';
+    }
+
+    async function saveEquipmentChanges() {
+      const id = document.getElementById('editItemId').value;
+      const saveBtn = document.getElementById('saveEditBtn');
+
+      const payload = {
+        model_name: document.getElementById('editModelName').value,
+        category: document.getElementById('editCategory').value,
+        status: document.getElementById('editStatus').value,
+        condition: document.getElementById('editCondition').value,
+        remarks: document.getElementById('editRemarks').value,
+        employee_name: document.getElementById('editTechnician').value || 'Technician'
+      };
+
+      saveBtn.disabled = true;
+      saveBtn.textContent = 'Saving...';
+
+      try {
+        const res = await fetch(`/api/equipment/${id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        if (res.ok) {
+          closeEditModal();
+          await fetchInventory();
+        } else {
+          const err = await res.json();
+          alert('Failed to update: ' + (err.error || 'Server error'));
+        }
+      } catch (err) {
+        alert('Error: ' + err.message);
+      } finally {
+        saveBtn.disabled = false;
+        saveBtn.textContent = 'Save Changes';
+      }
     }
 
     function filterTable() {
@@ -344,15 +397,13 @@
       renderTable(currentFiltered);
     }
 
-    function toggleSelectAll(masterCheckbox) {
-      const checkboxes = document.querySelectorAll('.row-checkbox');
-      checkboxes.forEach(cb => cb.checked = masterCheckbox.checked);
+    function toggleSelectAll(master) {
+      document.querySelectorAll('.row-checkbox').forEach(cb => cb.checked = master.checked);
       updateSelectedCounter();
     }
 
     function updateSelectedCounter() {
-      const count = document.querySelectorAll('.row-checkbox:checked').length;
-      document.getElementById('selectedCount').textContent = count;
+      document.getElementById('selectedCount').textContent = document.querySelectorAll('.row-checkbox:checked').length;
     }
 
     function printSingleBarcode(barcode, modelName, category) {
@@ -362,23 +413,19 @@
     function printSelectedBarcodes() {
       const checkedBoxes = Array.from(document.querySelectorAll('.row-checkbox:checked'));
       if (checkedBoxes.length === 0) {
-        alert('Please select at least one item using the checkboxes to print.');
+        alert('Please select at least one item.');
         return;
       }
-
-      const items = checkedBoxes.map(cb => ({
+      generateLabels(checkedBoxes.map(cb => ({
         barcode: cb.value,
         modelName: decodeURIComponent(cb.dataset.model),
         category: decodeURIComponent(cb.dataset.category)
-      }));
-
-      generateLabels(items);
+      })));
     }
 
     function generateLabels(items) {
       const container = document.getElementById('print-container');
       container.innerHTML = '';
-
       items.forEach((item, index) => {
         const svgId = `batch-barcode-${index}`;
         const card = document.createElement('div');
@@ -389,63 +436,26 @@
           <div style="font-size: 10px; color: #555;">${item.category}</div>
         `;
         container.appendChild(card);
-
-        JsBarcode(`#${svgId}`, item.barcode, {
-          format: "CODE128",
-          width: 1.4,
-          height: 38,
-          displayValue: true,
-          fontSize: 11,
-          margin: 3
-        });
+        JsBarcode(`#${svgId}`, item.barcode, { format: "CODE128", width: 1.4, height: 38, displayValue: true, fontSize: 11, margin: 3 });
       });
-
       window.print();
     }
 
-    // --- CSV Export Logic ---
     function formatCSVRow(arr) {
-      return arr.map(field => {
-        const str = (field === null || field === undefined) ? '' : String(field);
-        return `"${str.replace(/"/g, '""')}"`;
-      }).join(',');
-    }
-
-    function triggerDownload(csvContent, filename) {
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.setAttribute('href', url);
-      link.setAttribute('download', filename);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      return arr.map(f => `"${String(f ?? '').replace(/"/g, '""')}"`).join(',');
     }
 
     function exportInventoryToCSV() {
-      // Export currently filtered items (or all items if unfiltered)
-      const listToExport = currentFiltered.length > 0 ? currentFiltered : rawInventory;
-
-      if (listToExport.length === 0) {
-        alert('No inventory items available to export.');
-        return;
-      }
-
+      const list = currentFiltered.length > 0 ? currentFiltered : rawInventory;
+      if (list.length === 0) return alert('No inventory to export.');
       const headers = ['ID', 'Barcode', 'Model Name', 'Category', 'Status', 'Condition', 'Current Event', 'Remarks'];
-      const rows = listToExport.map(item => [
-        item.id,
-        item.barcode,
-        item.model_name,
-        item.category || 'General',
-        item.status || 'available',
-        item.condition || 'good',
-        item.event_name || 'In Warehouse',
-        item.remarks || ''
-      ]);
-
+      const rows = list.map(i => [i.id, i.barcode, i.model_name, i.category || 'General', i.status || 'available', i.condition || 'good', i.event_name || 'In Warehouse', i.remarks || '']);
       const csv = [headers.join(','), ...rows.map(formatCSVRow)].join('\r\n');
-      const filename = `master_inventory_${new Date().toISOString().split('T')[0]}.csv`;
-      triggerDownload(csv, filename);
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `master_inventory_${new Date().toISOString().split('T')[0]}.csv`;
+      a.click();
     }
   </script>
 </body>
