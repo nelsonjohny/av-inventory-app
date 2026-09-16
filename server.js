@@ -271,40 +271,50 @@ app.put('/api/equipment/:id', async (req, res) => {
 
     await client.query('BEGIN');
 
-    // Fixed: explicitly cast NULL to INT so PostgreSQL knows parameter types
-    const updateQuery = `
-      UPDATE equipment 
-      SET 
-        model_name = $1,
-        category = $2,
-        status = $3,
-        condition = $4,
-        remarks = $5,
-        current_event_id = CASE 
-          WHEN $3 IN ('available', 'maintenance') THEN NULL::INT 
-          ELSE current_event_id 
-        END
-      WHERE id = $6::INT
-      RETURNING *;
-    `;
-    const updateRes = await client.query(updateQuery, [
-      model_name.trim(),
-      category.trim(),
-      status,
-      condition || 'good',
-      remarks || null,
-      id
-    ]);
+    // If taking into maintenance or making available, detach from active event
+    let updateQuery;
+    let queryParams;
+
+    if (status === 'available' || status === 'maintenance') {
+      updateQuery = `
+        UPDATE equipment 
+        SET 
+          model_name = $1,
+          category = $2,
+          status = $3,
+          condition = $4,
+          remarks = $5,
+          current_event_id = NULL
+        WHERE id = $6
+        RETURNING *;
+      `;
+      queryParams = [model_name.trim(), category.trim(), status, condition || 'good', remarks || null, id];
+    } else {
+      updateQuery = `
+        UPDATE equipment 
+        SET 
+          model_name = $1,
+          category = $2,
+          status = $3,
+          condition = $4,
+          remarks = $5
+        WHERE id = $6
+        RETURNING *;
+      `;
+      queryParams = [model_name.trim(), category.trim(), status, condition || 'good', remarks || null, id];
+    }
+
+    const updateRes = await client.query(updateQuery, queryParams);
 
     if (updateRes.rows.length === 0) {
       await client.query('ROLLBACK');
       return res.status(404).json({ error: 'Equipment not found' });
     }
 
-    // Log the maintenance or edit action
+    // Log the maintenance or edit action without forced casting
     await client.query(
       `INSERT INTO equipment_logs (equipment_id, action_type, employee_name, condition, remarks) 
-       VALUES ($1::INT, $2, $3, $4, $5)`,
+       VALUES ($1, $2, $3, $4, $5)`,
       [
         id, 
         status === 'maintenance' ? 'MAINTENANCE_IN' : 'EDIT_UPDATE', 
