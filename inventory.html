@@ -1,10 +1,10 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <link rel="icon" href="data:,">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AV Inventory - Master Equipment List</title>
-  <link rel="icon" href="data:,">
   
   <!-- JsBarcode Library -->
   <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
@@ -177,20 +177,20 @@
       <h2>Master Inventory Catalog <span id="itemCount" style="font-size: 14px; color: #64748b;">(Loading...)</span></h2>
     </div>
     <div class="header-actions">
-      <button type="button" class="btn-export" onclick="exportInventoryToCSV()">📥 Export Inventory (CSV)</button>
-      <button type="button" class="btn-batch-print" onclick="printSelectedBarcodes()">🖨️ Print Selected (<span id="selectedCount">0</span>)</button>
+      <button type="button" class="btn-export" id="btnExportCSV">📥 Export Inventory (CSV)</button>
+      <button type="button" class="btn-batch-print" id="btnPrintBatch">🖨️ Print Selected (<span id="selectedCount">0</span>)</button>
     </div>
   </div>
 
   <div class="controls">
-    <input type="text" id="searchInput" placeholder="Search by model name or barcode..." oninput="filterTable()" />
-    <select id="statusFilter" onchange="filterTable()">
+    <input type="text" id="searchInput" placeholder="Search by model name or barcode..." />
+    <select id="statusFilter">
       <option value="">All Statuses</option>
       <option value="available">Available</option>
       <option value="in_use">In Use / On Hire</option>
       <option value="maintenance">Maintenance</option>
     </select>
-    <select id="conditionFilter" onchange="filterTable()">
+    <select id="conditionFilter">
       <option value="">All Conditions</option>
       <option value="excellent">Excellent</option>
       <option value="good">Good</option>
@@ -203,7 +203,7 @@
     <table>
       <thead>
         <tr>
-          <th style="width: 32px;"><input type="checkbox" id="selectAll" onchange="toggleSelectAll(this)" /></th>
+          <th style="width: 32px;"><input type="checkbox" id="selectAll" /></th>
           <th>Barcode</th>
           <th>Model Name</th>
           <th>Category</th>
@@ -253,11 +253,11 @@
       <textarea id="editRemarks" rows="2" placeholder="e.g. Cleaned optics, repaired connector"></textarea>
 
       <label>Technician Name</label>
-      <input type="text" id="editTechnician" placeholder="e.g. Sindhu" />
+      <input type="text" id="editTechnician" placeholder="e.g. Technician" />
 
       <div class="modal-buttons">
-        <button type="button" class="btn-cancel" onclick="closeEditModal()">Cancel</button>
-        <button type="button" class="btn-save" id="saveEditBtn" onclick="saveEquipmentChanges()">Save Changes</button>
+        <button type="button" class="btn-cancel" id="btnCancelEdit">Cancel</button>
+        <button type="button" class="btn-save" id="saveEditBtn">Save Changes</button>
       </div>
     </div>
   </div>
@@ -268,7 +268,51 @@
     let rawInventory = [];
     let currentFiltered = [];
 
-    window.onload = fetchInventory;
+    // Clean Event Listeners
+    window.addEventListener('DOMContentLoaded', () => {
+      // Header actions
+      document.getElementById('btnExportCSV').addEventListener('click', exportInventoryToCSV);
+      document.getElementById('btnPrintBatch').addEventListener('click', printSelectedBarcodes);
+
+      // Filters
+      document.getElementById('searchInput').addEventListener('input', filterTable);
+      document.getElementById('statusFilter').addEventListener('change', filterTable);
+      document.getElementById('conditionFilter').addEventListener('change', filterTable);
+
+      // Select all toggle
+      document.getElementById('selectAll').addEventListener('change', function () {
+        const checkboxes = document.querySelectorAll('.row-checkbox');
+        checkboxes.forEach(cb => cb.checked = this.checked);
+        updateSelectedCounter();
+      });
+
+      // Modal buttons
+      document.getElementById('btnCancelEdit').addEventListener('click', closeEditModal);
+      document.getElementById('saveEditBtn').addEventListener('click', saveEquipmentChanges);
+
+      // Event delegation for table action buttons & checkboxes
+      document.getElementById('inventoryBody').addEventListener('click', (e) => {
+        const target = e.target;
+        if (target.classList.contains('btn-edit')) {
+          const id = target.getAttribute('data-id');
+          openEditModal(id);
+        } else if (target.classList.contains('btn-print')) {
+          const barcode = target.getAttribute('data-barcode');
+          const item = rawInventory.find(i => String(i.barcode) === String(barcode));
+          if (item) {
+            printSingleBarcode(item.barcode, item.model_name || '', item.category || 'General');
+          }
+        }
+      });
+
+      document.getElementById('inventoryBody').addEventListener('change', (e) => {
+        if (e.target.classList.contains('row-checkbox')) {
+          updateSelectedCounter();
+        }
+      });
+
+      fetchInventory();
+    });
 
     async function fetchInventory() {
       try {
@@ -298,17 +342,16 @@
       items.forEach(item => {
         const tr = document.createElement('tr');
 
-        // 1. Checkbox cell
+        // Checkbox
         const tdCheck = document.createElement('td');
         const cb = document.createElement('input');
         cb.type = 'checkbox';
         cb.className = 'row-checkbox';
         cb.value = item.barcode || '';
-        cb.onchange = updateSelectedCounter;
         tdCheck.appendChild(cb);
         tr.appendChild(tdCheck);
 
-        // 2. Barcode cell
+        // Barcode
         const tdBarcode = document.createElement('td');
         const code = document.createElement('code');
         const strong = document.createElement('strong');
@@ -317,18 +360,18 @@
         tdBarcode.appendChild(code);
         tr.appendChild(tdBarcode);
 
-        // 3. Model cell
+        // Model
         const tdModel = document.createElement('td');
         tdModel.textContent = item.model_name || '';
         tr.appendChild(tdModel);
 
-        // 4. Category cell
+        // Category
         const tdCat = document.createElement('td');
         tdCat.style.color = '#64748b';
         tdCat.textContent = item.category || 'General';
         tr.appendChild(tdCat);
 
-        // 5. Status badge
+        // Status badge
         const tdStatus = document.createElement('td');
         const statusSpan = document.createElement('span');
         const st = (item.status || 'available').toLowerCase();
@@ -337,7 +380,7 @@
         tdStatus.appendChild(statusSpan);
         tr.appendChild(tdStatus);
 
-        // 6. Condition
+        // Condition
         const tdCond = document.createElement('td');
         const condSpan = document.createElement('span');
         const cond = (item.condition || 'good').toLowerCase();
@@ -346,32 +389,30 @@
         tdCond.appendChild(condSpan);
         tr.appendChild(tdCond);
 
-        // 7. Event / Notes
+        // Remarks / Event
         const tdNotes = document.createElement('td');
         if (item.event_name) {
-          tdNotes.innerHTML = `📅 <strong>${escapeHtml(item.event_name)}</strong>`;
-        } else if (item.remarks) {
-          tdNotes.textContent = item.remarks;
+          tdNotes.textContent = `📅 ${item.event_name}`;
         } else {
-          tdNotes.innerHTML = `<span style="color:#94a3b8;">—</span>`;
+          tdNotes.textContent = item.remarks || '—';
         }
         tr.appendChild(tdNotes);
 
-        // 8. Actions (Safe direct element creation)
+        // Actions
         const tdActions = document.createElement('td');
-
+        
         const btnPrint = document.createElement('button');
         btnPrint.type = 'button';
         btnPrint.className = 'btn-action btn-print';
+        btnPrint.setAttribute('data-barcode', item.barcode || '');
         btnPrint.textContent = '🖨️';
-        btnPrint.onclick = () => printSingleBarcode(item.barcode, item.model_name, item.category);
         tdActions.appendChild(btnPrint);
 
         const btnEdit = document.createElement('button');
         btnEdit.type = 'button';
         btnEdit.className = 'btn-action btn-edit';
+        btnEdit.setAttribute('data-id', item.id);
         btnEdit.textContent = '✏️ Service';
-        btnEdit.onclick = () => openEditModal(item);
         tdActions.appendChild(btnEdit);
 
         tr.appendChild(tdActions);
@@ -382,12 +423,8 @@
       updateSelectedCounter();
     }
 
-    function escapeHtml(str) {
-      if (!str) return '';
-      return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-    }
-
-    function openEditModal(item) {
+    function openEditModal(id) {
+      const item = rawInventory.find(i => String(i.id) === String(id));
       if (!item) return;
 
       document.getElementById('editItemId').value = item.id;
@@ -470,13 +507,9 @@
       renderTable(currentFiltered);
     }
 
-    function toggleSelectAll(master) {
-      document.querySelectorAll('.row-checkbox').forEach(cb => cb.checked = master.checked);
-      updateSelectedCounter();
-    }
-
     function updateSelectedCounter() {
-      document.getElementById('selectedCount').textContent = document.querySelectorAll('.row-checkbox:checked').length;
+      const count = document.querySelectorAll('.row-checkbox:checked').length;
+      document.getElementById('selectedCount').textContent = count;
     }
 
     function printSingleBarcode(barcode, modelName, category) {
@@ -510,6 +543,11 @@
         JsBarcode(`#${svgId}`, item.barcode, { format: "CODE128", width: 1.4, height: 38, displayValue: true, fontSize: 11, margin: 3 });
       });
       window.print();
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     }
 
     function formatCSVRow(arr) {
